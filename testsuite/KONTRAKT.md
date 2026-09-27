@@ -11,7 +11,7 @@ Alle `/api/test/*`-endepunkter finnes **bare** når `FAKTURA_TEST_MODE=true`. El
 | `GET /api/test/health` | – | `200 {"testMode": true}` |
 | `POST /api/test/reset` | `{fixture}` = `fixtures/seed.json` | `204`. Tømmer alle tabeller og laster fixturen. |
 | `POST /api/test/login` | `{userId, mfa?, orgId?}` eller `{newUserEmail}` | `200 {"csrfToken"}` + session-cookie. `mfa:false` gir en økt uten tofaktor. |
-| `GET /api/test/outbox` | – | `[{channel, to, subject, body, orgId}]` – e-post sendes ikke ut i testmodus |
+| `GET /api/test/outbox` | – | `[{channel, to, replyTo, subject, body, orgId, invoiceId, hasAttachment}]` – e-post sendes ikke ut i testmodus |
 | `POST /api/test/clock` | `{now}` eller `{now: "reset"}` | `204` |
 | `POST /api/test/run-jobs` | – | `204` |
 
@@ -78,16 +78,14 @@ Faste varer og tjenester som kan velges på fakturalinjer. Samme rolleregler som
 
 ## 7. Fakturaer (utkast)
 
-I denne fasen lages bare utkast. Fakturanummer, KID, utsending og kreditnota kommer i fase 3.
-
 | Kall | Svar |
 | --- | --- |
 | `POST /api/invoices` | `{customerId, theirReference?, note?, lines: [{description, quantity, unit?, unitPrice, vatRate, productId?}]}` → `201` med fakturaen (se under) |
-| `GET /api/invoices?customerId=` | `[{id, status, customerId, customerName, customerNumber, gross, createdAt, updatedAt}]`, nyeste først |
-| `GET /api/invoices/:id` | `{id, status: "utkast", customer: {…}, theirReference, note, lines: [{id, description, quantity, unit, unitPrice, vatRate, productId, net}], totals: {net, vat, gross, vatBreakdown: [{rate, base, vat}]}, vatRegistered, createdAt, updatedAt}` |
-| `PUT /api/invoices/:id` | Samme felt som ved opprettelse; linjene erstattes |
-| `DELETE /api/invoices/:id` | `204` |
-| `GET /api/invoices/:id/pdf` | `application/pdf` merket «UTKAST» |
+| `GET /api/invoices?customerId=&status=` | `[{id, kind, status, overdue, number, customerId, customerName, customerNumber, gross, issueDate, dueDate, createdAt, updatedAt}]`. Utkast først, deretter høyeste nummer først. `status` er `utkast`, `ubetalt` (sendt, også forfalte), `forfalt`, `betalt` eller `kreditert`. |
+| `GET /api/invoices/:id` | `{id, kind, status, overdue, number, kid, issueDate, dueDate, delivery, sentTo, sentAt, paidDate, creditOf, creditedBy, customer: {…}, theirReference, note, lines: [{id, description, quantity, unit, unitPrice, vatRate, productId, net}], totals: {net, vat, gross, vatBreakdown: [{rate, base, vat}]}, vatRegistered, createdAt, updatedAt}` |
+| `PUT /api/invoices/:id` | Samme felt som ved opprettelse; linjene erstattes. Bare utkast: ellers `409 {code: "faktura_sendt"}` |
+| `DELETE /api/invoices/:id` | `204`. Bare utkast: ellers `409 {code: "faktura_sendt"}` |
+| `GET /api/invoices/:id/pdf` | `application/pdf`. Utkast er merket «UTKAST»; sendte fakturaer har nummer, KID og forfallsdato. |
 
 Regler:
 
@@ -96,3 +94,28 @@ Regler:
 - Er bedriften ikke registrert i Merverdiavgiftsregisteret, lagres alle linjer med sats 0 og fakturaen har ingen mva.
 - `customerId` eller `productId` som ikke finnes i bedriften, gir `422` med feltet `customerId` eller `lines.N.productId` (det avsløres ikke om den finnes i en annen bedrift).
 - Høyst 200 linjer. Minst én linje.
+
+## 8. Utsending, fakturanummer, KID, betaling og kreditnota
+
+| Kall | Svar |
+| --- | --- |
+| `POST /api/invoices/:id/send` | `{delivery: "epost" \| "manuell"}` → `200` med fakturaen, nå `status: "sendt"`. `epost` legger en e-post med PDF-en i utboksen til kundens e-postadresse; `manuell` betyr at brukeren sender PDF-en selv. |
+| `POST /api/invoices/:id/mark-paid` | `{paidDate?}` (standard i dag) → `status: "betalt"`. Bare fakturaer med status `sendt`. |
+| `POST /api/invoices/:id/mark-unpaid` | Tilbake til `sendt`. |
+| `POST /api/invoices/:id/credit` | `{delivery?: "epost" \| "manuell"}` → `201` med kreditnotaen. Fakturaen får `status: "kreditert"`. |
+| `GET /api/organizations/current` | Har i tillegg `nextInvoiceNumber`. |
+| `PUT /api/organizations/current/invoice-number` | `{nextInvoiceNumber, reason}` → `200`. Krever eier eller administrator. Kan bare økes (`422` ellers) og krever begrunnelse. Logges som `fakturaserie_endret`. |
+| `GET /api/dashboard` | `{outstanding, outstandingCount, overdue, overdueCount, paidThisMonth, draftCount}` – beløp i øre, bare fakturaer (ikke kreditnotaer) |
+
+Regler:
+
+- **Fakturanummer** tildeles ved utsending: neste nummer i bedriftens serie (standard fra 1). Fakturaer og kreditnotaer deler serien. Serien har aldri hull eller dubletter, heller ikke når to sendes samtidig eller en utsending feiler.
+- **KID** (bare fakturaer): kundenummer med 5 siffer + fakturanummer med 7 siffer + kontrollsiffer (MOD10), til sammen 13 siffer.
+- **Datoer:** fakturadato er dagens dato (norsk tid). Forfallsdato er fakturadato + bedriftens betalingsfrist.
+- **Før utsending** må bedriften ha organisasjonsnummer, adresse og kontonummer: ellers `409 {code: "mangler_firmaopplysninger", missing: [...]}`. `epost` krever at kunden har e-postadresse: ellers `409 {code: "kunde_mangler_epost"}`. Ingenting endres når utsendingen avvises (heller ikke nummerserien).
+- **Etter utsending** er selger- og kundeopplysningene frosset: endringer på kunden eller firmaet senere endrer ikke fakturaen eller PDF-en. En sendt faktura kan aldri endres eller slettes; den rettes med kreditnota. Databasen håndhever dette i tillegg til API-et.
+- **Forfalt:** `overdue` er `true` når status er `sendt` og forfallsdatoen er passert (norsk tid).
+- **Kreditnota:** krediterer hele fakturaen med de samme linjene med negativt antall, får neste nummer, dagens dato og ingen KID eller forfall. En faktura kan bare krediteres én gang (`409 {code: "allerede_kreditert"}`), og bare når den er sendt eller betalt. Kreditnotaen har `creditOf`; fakturaen har `creditedBy`.
+- **E-posten** har emnet «Faktura <nummer> fra <bedrift>» (eller «Kreditnota …»), svar-til bedriftens e-post, og PDF-en som vedlegg. Testutboksen viser `invoiceId` og `hasAttachment: true`.
+- **Revisjonslogg:** `faktura_sendt`, `faktura_betalt`, `faktura_ubetalt`, `faktura_kreditert`, `fakturaserie_endret`.
+- Rollen lesetilgang kan ikke sende, merke som betalt eller kreditere (`403`).

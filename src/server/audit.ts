@@ -8,7 +8,8 @@ import type { Q } from './db';
 
 export const AUDIT_ACTIONS = [
   'tilgang_nektet', 'innlogging', 'organisasjon_opprettet', 'firma_endret', 'medlem_invitert', 'rolle_endret',
-  'medlem_fjernet', 'organisasjon_valgt',
+  'medlem_fjernet', 'organisasjon_valgt', 'faktura_sendt', 'faktura_betalt', 'faktura_ubetalt', 'faktura_kreditert',
+  'fakturaserie_endret',
 ] as const;
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];
 

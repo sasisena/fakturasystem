@@ -6,9 +6,11 @@ Fakturasystem for små bedrifter og frilansere – web og mobil. «Fakturasystem
 
 **Leveranse 1 – grunnmur (ferdig):** flere bedrifter i samme løsning med vanntette skott i databasen, innlogging med engangskode på e-post og tofaktor, registrering av bedrift med oppslag i Brønnøysundregistrene, firmaopplysninger, brukere og roller, og revisjonslogg.
 
-**Leveranse 2 – kunder, produkter og fakturautkast (denne):** kundekartotek med fortløpende kundenummer, produkter, fakturautkast med flere mva-satser og PDF.
+**Leveranse 2 – kunder, produkter og fakturautkast (ferdig):** kundekartotek med fortløpende kundenummer, produkter, fakturautkast med flere mva-satser og PDF.
 
-**Neste leveranser:** nummerserie, KID og kreditnota → innbetalinger fra bank → purring → EHF, integrasjoner og betaling for abonnement. Se `docs/strategi.md` og `docs/overlevering.md`.
+**Leveranse 3 – utsending (denne):** fakturanummer uten hull, KID, utsending på e-post med PDF, merk som betalt, forfalte fakturaer, kreditnota, og sperre i databasen mot å endre sendte fakturaer.
+
+**Neste leveranser:** innbetalinger fra bank → purring → EHF, integrasjoner og betaling for abonnement. Se `docs/strategi.md` og `docs/overlevering.md`.
 
 ## Teknologi
 

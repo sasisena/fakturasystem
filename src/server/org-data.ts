@@ -26,6 +26,7 @@ export const orgDto = (o: OrgRow) => ({
   phone: o.phone,
   accountNumber: o.accountNumber,
   paymentTermsDays: o.paymentTermsDays,
+  nextInvoiceNumber: o.nextInvoiceNumber,
 });
 
 /** Hva som mangler før bedriften kan sende en faktura som oppfyller bokføringsforskriften. */

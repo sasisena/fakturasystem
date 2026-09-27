@@ -75,16 +75,16 @@ test('validering av linjer', () => {
 });
 
 test('statusoverganger', () => {
-  eq(canTransition('draft', 'sent'), true);
-  eq(canTransition('draft', 'paid'), false);
-  eq(canTransition('sent', 'paid'), true);
-  eq(canTransition('credited', 'paid'), false);
+  eq(canTransition('utkast', 'sendt'), true);
+  eq(canTransition('utkast', 'betalt'), false);
+  eq(canTransition('sendt', 'betalt'), true);
+  eq(canTransition('kreditert', 'betalt'), false);
 });
 
 test('datoer og forfall', () => {
   eq(addDays('2026-12-20', 14), '2027-01-03');
-  eq(isOverdue('sent', '2026-09-01', '2026-09-27'), true);
-  eq(isOverdue('paid', '2026-09-01', '2026-09-27'), false);
+  eq(isOverdue('sendt', '2026-09-01', '2026-09-27'), true);
+  eq(isOverdue('betalt', '2026-09-01', '2026-09-27'), false);
 });
 
 test('parsing av kronebeløp', () => {

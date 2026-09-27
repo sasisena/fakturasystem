@@ -4,6 +4,7 @@ import { formatAccountNumber } from '@/lib/faktura';
 import { requireOrg } from '@/server/page-auth';
 import { currentOrganization, orgDto } from '@/server/org-data';
 import { CompanyForm } from './company-form';
+import { InvoiceNumber } from './invoice-number';
 
 export const metadata: Metadata = { title: 'Firma' };
 
@@ -19,6 +20,10 @@ export default async function CompanyPage() {
       {!canEdit && <Alert tone="info">Du kan se opplysningene, men bare eiere og administratorer kan endre dem.</Alert>}
       <Card>
         <CompanyForm initial={org} readOnly={!canEdit} />
+      </Card>
+      <Card>
+        <h2 className="mb-3">Fakturanummer</h2>
+        <InvoiceNumber next={dto.nextInvoiceNumber} canEdit={canEdit} />
       </Card>
     </div>
   );

@@ -2,11 +2,12 @@
  * Kunder, produkter og fakturautkast. Alle spørringer kjører i forespørselens transaksjon med
  * RLS-omfanget til bedriften; filtrene på org_id i koden er i tillegg, ikke i stedet.
  */
-import { and, asc, desc, eq, inArray, sql } from 'drizzle-orm';
-import { customers, invoiceLines, invoices, organizations, products } from '@/db/schema';
-import { invoiceTotals, lineTotals, type InvoiceTotals, type VatRate } from '@/lib/faktura';
+import { and, asc, desc, eq, inArray, lt, sql } from 'drizzle-orm';
+import { customers, invoiceLines, invoices, organizations, products, type PartySnapshot } from '@/db/schema';
+import { invoiceTotals, isOverdue, lineTotals, type InvoiceStatus, type InvoiceTotals, type VatRate } from '@/lib/faktura';
+import { todayOslo } from './clock';
 import type { Tx } from './db';
-import { invalid, notFound, type FieldError } from './errors';
+import { conflict, invalid, notFound, type FieldError } from './errors';
 import { isUuid } from './util';
 import type { InvoiceInput } from './validation';
 
@@ -71,8 +72,25 @@ export type InvoiceLineDto = {
 
 export type InvoiceDto = {
   id: string;
+  kind: InvoiceRow['kind'];
   status: InvoiceRow['status'];
+  /** Sendt og forfallsdatoen er passert (norsk tid). */
+  overdue: boolean;
+  number: number | null;
+  kid: string | null;
+  issueDate: string | null;
+  dueDate: string | null;
+  delivery: string | null;
+  sentTo: string | null;
+  sentAt: Date | null;
+  paidDate: string | null;
+  creditOf: string | null;
+  /** Kreditnotaen som krediterer denne fakturaen, hvis noen. */
+  creditedBy: string | null;
+  /** Kunden slik den var da fakturaen ble sendt (for utkast: slik den er nå). */
   customer: CustomerDto;
+  /** Selgeren slik den var da fakturaen ble sendt (null for utkast). */
+  seller: PartySnapshot | null;
   theirReference: string;
   note: string;
   lines: InvoiceLineDto[];
@@ -87,6 +105,9 @@ async function vatRegistered(tx: Tx, orgId: string): Promise<boolean> {
   return !!row?.v;
 }
 
+export const isOverdueRow = (r: { kind: string; status: string; dueDate: string | null }, today = todayOslo()) =>
+  r.kind === 'faktura' && !!r.dueDate && isOverdue(r.status as InvoiceStatus, r.dueDate, today);
+
 export async function invoiceById(tx: Tx, orgId: string, id: string): Promise<InvoiceDto> {
   if (!isUuid(id)) throw notFound();
   const row = (
@@ -98,6 +119,7 @@ export async function invoiceById(tx: Tx, orgId: string, id: string): Promise<In
       .limit(1)
   )[0];
   if (!row) throw notFound(true);
+  const i = row.i;
   const lineRows = await tx.select().from(invoiceLines).where(eq(invoiceLines.invoiceId, id)).orderBy(asc(invoiceLines.position));
   const lines: InvoiceLineDto[] = lineRows.map((l) => ({
     id: l.id,
@@ -109,44 +131,94 @@ export async function invoiceById(tx: Tx, orgId: string, id: string): Promise<In
     productId: l.productId,
     net: lineTotals({ description: l.description, quantity: Number(l.quantity), unitPrice: l.unitPrice, vatRate: l.vatRate as VatRate }).net,
   }));
-  const vat = await vatRegistered(tx, orgId);
+  // Sendte fakturaer bruker mva-statusen fra utsendingstidspunktet.
+  const vat = i.vatRegistered ?? (await vatRegistered(tx, orgId));
+  const creditedBy = i.kind === 'faktura' && i.status === 'kreditert'
+    ? ((await tx.select({ id: invoices.id }).from(invoices).where(and(eq(invoices.orgId, orgId), eq(invoices.creditOf, i.id))).limit(1))[0]?.id ?? null)
+    : null;
+  const customer = i.buyer ? { ...customerDto(row.c), ...snapshotToCustomer(i.buyer) } : customerDto(row.c);
   return {
-    id: row.i.id,
-    status: row.i.status,
-    customer: customerDto(row.c),
-    theirReference: row.i.theirReference,
-    note: row.i.note,
+    id: i.id,
+    kind: i.kind,
+    status: i.status,
+    overdue: isOverdueRow(i),
+    number: i.number,
+    kid: i.kid,
+    issueDate: i.issueDate,
+    dueDate: i.dueDate,
+    delivery: i.delivery,
+    sentTo: i.sentTo,
+    sentAt: i.sentAt,
+    paidDate: i.paidDate,
+    creditOf: i.creditOf,
+    creditedBy,
+    customer,
+    seller: i.seller,
+    theirReference: i.theirReference,
+    note: i.note,
     lines,
     totals: invoiceTotals(lines, vat),
     vatRegistered: vat,
-    createdAt: row.i.createdAt,
-    updatedAt: row.i.updatedAt,
+    createdAt: i.createdAt,
+    updatedAt: i.updatedAt,
   };
 }
 
-export async function listInvoices(tx: Tx, orgId: string, filter: { customerId?: string | null }) {
+const snapshotToCustomer = (b: PartySnapshot) => ({
+  name: b.name,
+  orgNumber: b.orgNumber,
+  email: b.email,
+  phone: b.phone,
+  address: b.address,
+  postalCode: b.postalCode,
+  city: b.city,
+  ...(b.customerNumber !== undefined ? { customerNumber: b.customerNumber } : {}),
+});
+
+export const LIST_FILTERS = ['utkast', 'ubetalt', 'forfalt', 'betalt', 'kreditert'] as const;
+
+export async function listInvoices(tx: Tx, orgId: string, filter: { customerId?: string | null; status?: string | null }) {
+  const today = todayOslo();
   const conds = [eq(invoices.orgId, orgId)];
   if (filter.customerId) {
     if (!isUuid(filter.customerId)) return [];
     conds.push(eq(invoices.customerId, filter.customerId));
   }
+  switch (filter.status) {
+    case 'utkast':
+    case 'betalt':
+    case 'kreditert':
+      conds.push(eq(invoices.status, filter.status), eq(invoices.kind, 'faktura'));
+      break;
+    case 'ubetalt':
+      conds.push(eq(invoices.status, 'sendt'), eq(invoices.kind, 'faktura'));
+      break;
+    case 'forfalt':
+      conds.push(eq(invoices.status, 'sendt'), eq(invoices.kind, 'faktura'), lt(invoices.dueDate, today));
+      break;
+  }
   const rows = await tx
     .select({
       id: invoices.id,
+      kind: invoices.kind,
       status: invoices.status,
+      number: invoices.number,
       customerId: invoices.customerId,
-      customerName: customers.name,
+      customerName: sql<string>`coalesce(${invoices.buyer}->>'name', ${customers.name})`,
       customerNumber: customers.customerNumber,
       gross: invoices.gross,
+      issueDate: invoices.issueDate,
+      dueDate: invoices.dueDate,
       createdAt: invoices.createdAt,
       updatedAt: invoices.updatedAt,
     })
     .from(invoices)
     .innerJoin(customers, eq(customers.id, invoices.customerId))
     .where(and(...conds))
-    .orderBy(desc(invoices.createdAt));
-  return rows;
+    .orderBy(sql`${invoices.number} desc nulls first`, desc(invoices.createdAt));
+  return rows.map((r) => ({ ...r, overdue: isOverdueRow(r, today) }));
 }
+export type InvoiceListRow = Awaited<ReturnType<typeof listInvoices>>[number];
 
 /**
  * Sjekker kunde og produkter mot bedriften og regner ut summene. Gir feltvise 422-feil,
@@ -174,7 +246,7 @@ async function prepare(tx: Tx, orgId: string, input: InvoiceInput) {
   return { lines, totals };
 }
 
-async function writeLines(tx: Tx, orgId: string, invoiceId: string, lines: Awaited<ReturnType<typeof prepare>>['lines']) {
+export async function writeLines(tx: Tx, orgId: string, invoiceId: string, lines: Awaited<ReturnType<typeof prepare>>['lines']) {
   await tx.delete(invoiceLines).where(eq(invoiceLines.invoiceId, invoiceId));
   await tx.insert(invoiceLines).values(
     lines.map((l, position) => ({
@@ -201,8 +273,10 @@ export async function createInvoice(tx: Tx, orgId: string, userId: string, input
   return invoiceById(tx, orgId, row.id);
 }
 
+export const alreadySent = () => conflict('faktura_sendt', 'Fakturaen er sendt og kan ikke endres. Lag en kreditnota hvis den er feil.');
+
 export async function updateInvoice(tx: Tx, orgId: string, id: string, input: InvoiceInput): Promise<InvoiceDto> {
-  await invoiceById(tx, orgId, id);
+  if ((await invoiceById(tx, orgId, id)).status !== 'utkast') throw alreadySent();
   const { lines, totals } = await prepare(tx, orgId, input);
   await tx
     .update(invoices)
@@ -213,7 +287,7 @@ export async function updateInvoice(tx: Tx, orgId: string, id: string, input: In
 }
 
 export async function deleteInvoice(tx: Tx, orgId: string, id: string): Promise<void> {
-  await invoiceById(tx, orgId, id);
+  if ((await invoiceById(tx, orgId, id)).status !== 'utkast') throw alreadySent();
   await tx.delete(invoices).where(and(eq(invoices.orgId, orgId), eq(invoices.id, id)));
 }
 

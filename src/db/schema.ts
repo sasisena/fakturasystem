@@ -6,7 +6,8 @@
  * - Brukere er felles: én person kan være med i flere organisasjoner (f.eks. en regnskapsfører).
  * - Primærnøklene er tekniske UUID-er.
  */
-import { bigint, bigserial, boolean, index, integer, jsonb, numeric, pgTable, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
+import { sql } from 'drizzle-orm';
+import { bigint, bigserial, boolean, date, index, integer, jsonb, numeric, pgTable, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
 
 const ts = (name: string) => timestamp(name, { withTimezone: true, mode: 'date' });
 
@@ -30,6 +31,12 @@ export const organizations = pgTable('organizations', {
   paymentTermsDays: integer('payment_terms_days').notNull().default(14),
   /** Neste kundenummer i bedriften. Tildeles i samme transaksjon som kunden opprettes. */
   nextCustomerNumber: integer('next_customer_number').notNull().default(1),
+  /**
+   * Neste fakturanummer. Fakturaer og kreditnotaer deler serien. Tildeles i samme transaksjon som
+   * utsendingen, så serien får aldri hull eller dubletter. Kan bare økes (f.eks. for å fortsette
+   * nummerserien fra et tidligere system).
+   */
+  nextInvoiceNumber: integer('next_invoice_number').notNull().default(1),
   createdAt: ts('created_at').notNull().defaultNow(),
 });
 
@@ -91,8 +98,25 @@ export const products = pgTable(
   (t) => [index('products_org_name').on(t.orgId, t.name)],
 );
 
-export const INVOICE_STATUSES = ['utkast'] as const;
+export const INVOICE_STATUSES = ['utkast', 'sendt', 'betalt', 'kreditert'] as const;
 export type InvoiceStatus = (typeof INVOICE_STATUSES)[number];
+export const INVOICE_KINDS = ['faktura', 'kreditnota'] as const;
+export type InvoiceKind = (typeof INVOICE_KINDS)[number];
+
+/** Selger og kunde slik de var da fakturaen ble sendt. Fakturaen skal ikke endre seg om kunden eller firmaet endres senere. */
+export type PartySnapshot = {
+  name: string;
+  orgNumber: string;
+  organizationForm?: string;
+  vatRegistered?: boolean;
+  address: string;
+  postalCode: string;
+  city: string;
+  email: string;
+  phone: string;
+  accountNumber?: string;
+  customerNumber?: number;
+};
 
 export const invoices = pgTable(
   'invoices',
@@ -100,8 +124,24 @@ export const invoices = pgTable(
     id: uuid('id').primaryKey().defaultRandom(),
     orgId: uuid('org_id').notNull().references(() => organizations.id, { onDelete: 'cascade' }),
     customerId: uuid('customer_id').notNull().references(() => customers.id),
-    /** Fase 2 har bare utkast. Nummer, KID, utsending og kreditnota kommer i fase 3. */
+    kind: text('kind').$type<InvoiceKind>().notNull().default('faktura'),
     status: text('status').$type<InvoiceStatus>().notNull().default('utkast'),
+    /** Fakturanummer. Tomt for utkast; settes når fakturaen sendes. */
+    number: integer('number'),
+    /** Kreditnotaen krediterer denne fakturaen. */
+    creditOf: uuid('credit_of'),
+    kid: text('kid'),
+    issueDate: date('issue_date', { mode: 'string' }),
+    dueDate: date('due_date', { mode: 'string' }),
+    /** 'epost' = sendt fra systemet, 'manuell' = brukeren sender PDF-en selv. */
+    delivery: text('delivery'),
+    sentTo: text('sent_to'),
+    sentAt: ts('sent_at'),
+    sentBy: uuid('sent_by'),
+    paidDate: date('paid_date', { mode: 'string' }),
+    seller: jsonb('seller').$type<PartySnapshot>(),
+    buyer: jsonb('buyer').$type<PartySnapshot>(),
+    vatRegistered: boolean('vat_registered'),
     theirReference: text('their_reference').notNull().default(''),
     note: text('note').notNull().default(''),
     /** Summer lagres for lister og rapporter; regnes alltid ut på nytt fra linjene ved endring. */
@@ -112,7 +152,14 @@ export const invoices = pgTable(
     createdAt: ts('created_at').notNull().defaultNow(),
     updatedAt: ts('updated_at').notNull().defaultNow(),
   },
-  (t) => [index('invoices_org_created').on(t.orgId, t.createdAt), index('invoices_customer').on(t.customerId)],
+  (t) => [
+    index('invoices_org_created').on(t.orgId, t.createdAt),
+    index('invoices_customer').on(t.customerId),
+    // Aldri to fakturaer med samme nummer i en bedrift.
+    uniqueIndex('invoices_org_number').on(t.orgId, t.number).where(sql`number is not null`),
+    // En faktura krediteres høyst én gang.
+    uniqueIndex('invoices_credit_of').on(t.creditOf).where(sql`credit_of is not null`),
+  ],
 );
 
 export const invoiceLines = pgTable(
@@ -205,6 +252,9 @@ export const auditLog = pgTable(
 export const outbox = pgTable('outbox', {
   seq: bigserial('seq', { mode: 'number' }).primaryKey(),
   orgId: uuid('org_id'),
+  /** Fakturaen som skal ligge ved som PDF. PDF-en lages ved utsending, fra fakturaens frosne opplysninger. */
+  invoiceId: uuid('invoice_id'),
+  replyTo: text('reply_to'),
   channel: text('channel').notNull(), // email
   to: text('to').notNull(),
   subject: text('subject'),

@@ -17,6 +17,11 @@ const ACTION_LABELS: Record<string, string> = {
   rolle_endret: 'Endret rolle',
   medlem_fjernet: 'Fjernet tilgang',
   tilgang_nektet: 'Forsøk uten tilgang',
+  faktura_sendt: 'Sendte faktura',
+  faktura_betalt: 'Merket faktura som betalt',
+  faktura_ubetalt: 'Angret betalt på faktura',
+  faktura_kreditert: 'Krediterte faktura',
+  fakturaserie_endret: 'Endret fakturanummer',
 };
 
 const fmt = new Intl.DateTimeFormat('nb-NO', { dateStyle: 'short', timeStyle: 'short', timeZone: 'Europe/Oslo' });
