@@ -1,0 +1,6 @@
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Kjente testverdier som ikke er hemmeligheter"
+paths = ['''\.env\.example''', '''docker/init-db\.sql''', '''docker-compose\.yml''', '''\.github/workflows/ci\.yml''', '''testsuite/''', '''tests/unit/''']

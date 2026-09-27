@@ -1,0 +1,96 @@
+@import 'tailwindcss';
+/* Designtokens (farger, skrift, avstand, hjørner). Tokens.css er ulagdelt og vinner over
+   standardverdiene under, slik at mørk modus virker uten ny kode. */
+@import '../../design/tokens.css';
+
+@theme {
+  --color-primary: #1F4D3A;
+  --color-on-primary: #fff;
+  --color-primary-strong: #133326;
+  --color-primary-soft: #DCEEE3;
+  --color-accent: #E0A526;
+  --color-on-accent: #1B1F1D;
+  --color-contrast: #1F4D3A;
+  --color-on-contrast: #fff;
+  --color-bg: #F7F6F2;
+  --color-surface: #fff;
+  --color-surface-2: #F0EFEA;
+  --color-surface-3: #E6E4DD;
+  --color-ink: #1B1F1D;
+  --color-muted: #555F5A;
+  --color-border: #D6D3CA;
+  --color-border-strong: #7A837E;
+  --color-focus: #1F4D3A;
+  --color-success: #196B42;
+  --color-success-soft: #D5EEDF;
+  --color-warning: #6B4E00;
+  --color-warning-soft: #FFEFB8;
+  --color-danger: #A61D13;
+  --color-danger-soft: #FFDAD4;
+  --color-info: #1D4F73;
+  --color-info-soft: #D6E8F5;
+  --color-purple: #5A4A9C;
+  --color-purple-soft: #E7E2F6;
+  --color-nav: #1F4D3A;
+  --color-nav-strong: #133326;
+  --color-on-nav: #fff;
+  --color-on-nav-muted: #D2E6DA;
+  --font-sans: "Atkinson Hyperlegible Next", Arial, Verdana, "Segoe UI", sans-serif;
+  --text-xs: 0.8125rem;
+  --text-xs--line-height: 1.4;
+  --text-sm: 0.9375rem;
+  --text-sm--line-height: 1.5;
+  --text-base: 1rem;
+  --text-base--line-height: 1.5;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-button: 20px;
+}
+
+@layer base {
+  html {
+    background: var(--color-bg);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    line-height: var(--leading-body);
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    min-height: 100dvh;
+  }
+  h1, h2, h3 {
+    line-height: var(--leading-tight);
+    text-wrap: balance;
+    font-weight: 600;
+  }
+  h1 {
+    font-size: var(--text-page);
+  }
+  h2 {
+    font-size: var(--text-section);
+  }
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+  a {
+    color: var(--color-primary);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+  :focus-visible {
+    outline: 3px solid var(--color-focus);
+    outline-offset: 2px;
+  }
+  input, select, textarea, button {
+    font: inherit;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "name": "fakturasystem-tests",
+  "private": true,
+  "type": "module",
+  "description": "Automatiske tester for Fakturasystem. Kjøres bare mot et testmiljø med FAKTURA_TEST_MODE=true.",
+  "scripts": {
+    "test": "playwright test",
+    "test:api": "playwright test --project=api",
+    "test:ui": "playwright test --project=mobil --project=desktop",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.56.1",
+    "@types/node": "^22.0.0",
+    "typescript": "^5.6.0"
+  }
+}

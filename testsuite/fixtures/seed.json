@@ -1,0 +1,35 @@
+{
+  "_kommentar": "Oppdiktede testdata. Ingen ekte personer eller bedrifter.",
+  "organizations": [
+    {
+      "id": "0a000000-0000-4000-8000-000000000001",
+      "name": "Fjellsnø Design AS",
+      "orgNumber": "923609016",
+      "organizationForm": "AS",
+      "vatRegistered": true,
+      "address": "Testveien 1",
+      "postalCode": "0150",
+      "city": "Oslo",
+      "email": "post@fjellsno.example",
+      "accountNumber": "86011117947"
+    },
+    {
+      "id": "0b000000-0000-4000-8000-000000000002",
+      "name": "Nordlys Bakeri",
+      "vatRegistered": false,
+      "address": "Bakergata 2",
+      "postalCode": "9008",
+      "city": "Tromsø"
+    }
+  ],
+  "users": [
+    { "key": "eier-a", "id": "1a000000-0000-4000-8000-000000000001", "email": "kari@fjellsno.example", "name": "Kari Fjellsnø", "memberships": [{ "org": "0a000000-0000-4000-8000-000000000001", "role": "eier" }] },
+    { "key": "admin-a", "id": "1a000000-0000-4000-8000-000000000002", "email": "ola@fjellsno.example", "name": "Ola Admin", "memberships": [{ "org": "0a000000-0000-4000-8000-000000000001", "role": "administrator" }] },
+    { "key": "fakturering-a", "id": "1a000000-0000-4000-8000-000000000003", "email": "per@fjellsno.example", "name": "Per Faktura", "memberships": [{ "org": "0a000000-0000-4000-8000-000000000001", "role": "fakturering" }] },
+    { "key": "regnskap", "id": "1c000000-0000-4000-8000-000000000001", "email": "rita@regnskap.example", "name": "Rita Regnskap", "memberships": [
+      { "org": "0a000000-0000-4000-8000-000000000001", "role": "lesetilgang" },
+      { "org": "0b000000-0000-4000-8000-000000000002", "role": "lesetilgang" }
+    ] },
+    { "key": "eier-b", "id": "1b000000-0000-4000-8000-000000000001", "email": "nina@nordlys.example", "name": "Nina Nordlys", "memberships": [{ "org": "0b000000-0000-4000-8000-000000000002", "role": "eier" }] }
+  ]
+}

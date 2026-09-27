@@ -1,31 +1,32 @@
 # Fakturasystem
 
-Prototype av kjerneflyten «lag faktura → send → få betalt», for web og mobil (installerbar app).
+Fakturasystem for små bedrifter og frilansere – web og mobil. «Fakturasystem» er et arbeidsnavn inntil produktet har fått navn.
 
-**Status:** klikkbar prototype for én bedrift. Ikke klar for ekte kunder — se «Ikke med ennå».
+## Status
 
-## Hva som virker
+**Leveranse 1 – grunnmur (denne):** flere bedrifter i samme løsning med vanntette skott i databasen, innlogging med engangskode på e-post og tofaktor, registrering av bedrift med oppslag i Brønnøysundregistrene, firmaopplysninger, brukere og roller, og revisjonslogg.
 
-- Firmaopplysninger og kunder, med automatisk utfylling fra Brønnøysundregistrene
-- Faktura med mva (25/15/12/0 %), eller uten mva for bedrifter som ikke er mva-registrert
-- Fortløpende fakturanummer uten hull, KID (MOD10), kontroll av kontonummer og org.nr. (MOD11)
-- PDF med de opplysningene bokføringsforskriften krever, sendt på e-post eller delt fra telefonen
-- Merk som betalt, angre, og kreditnota i stedet for sletting
-- Oversikt over utestående, forfalt og betalt
+**Neste leveranser:** kunder og fakturaer med mva og PDF → nummerserie, KID og kreditnota → innbetalinger fra bank → purring → EHF, integrasjoner og betaling for abonnement. Se `docs/strategi.md` og `docs/overlevering.md`.
 
-## Ikke med ennå
+## Teknologi
 
-Innlogging og flere kunder (organisasjoner) i samme løsning, innbetalinger fra bank, purring, EHF/Peppol, Vipps.
+Samme oppbygging som ATAK-systemet: Next.js 16, React 19, TypeScript, Drizzle ORM og PostgreSQL 16 med Row Level Security, Zod, Tailwind 4, Vitest og Playwright.
 
 ## Kjøre lokalt
 
-Krever Node.js 22.18 eller nyere.
-
 ```
+docker compose up -d                 # Postgres med roller (docker/init-db.sql)
+cp .env.example .env                 # fyll inn APP_SECRET; FAKTURA_TEST_MODE=true for testene
 npm install
-npm run dev        # API på :3000 og web på :5173
-npm test           # tester
-npm run typecheck
+npm run db:migrate
+npm run dev
 ```
 
-Bakgrunn og strategi: [docs/strategi.md](docs/strategi.md).
+## Tester
+
+```
+npm run lint && npm run typecheck && npm run test:unit   # enhetstester og skott i databasen
+cd testsuite && npm install && npx playwright test       # API og skjermtester mot kjørende app
+```
+
+Kontrakten testene bygger på står i `testsuite/KONTRAKT.md`.
