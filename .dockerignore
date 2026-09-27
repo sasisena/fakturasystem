@@ -1,0 +1,9 @@
+node_modules
+.next
+.git
+testsuite/node_modules
+testsuite/resultater
+testsuite/test-results
+.env
+.env.*
+!.env.example

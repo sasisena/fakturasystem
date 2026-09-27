@@ -1,0 +1,10 @@
+node_modules/
+.next/
+next-env.d.ts
+*.tsbuildinfo
+.env
+.env.*
+!.env.example
+testsuite/node_modules/
+testsuite/resultater/
+testsuite/test-results/

@@ -1,0 +1,96 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  kvalitet:
+    name: Lint, typesjekk og enhetstester
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run test:unit
+
+  hemmeligheter:
+    name: Søk etter hemmeligheter
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  testsuite:
+    name: Migreringer, skott i databasen og testsuite
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 3s --health-timeout 3s --health-retries 20
+    env:
+      DATABASE_MIGRATION_URL: postgres://faktura_owner:faktura_owner@localhost:5432/faktura_test
+      DATABASE_URL: postgres://faktura_app:faktura_app@localhost:5432/faktura_test
+      APP_SECRET: ci-hemmelighet-som-bare-brukes-i-ci-0123456789abcdef
+      FAKTURA_TEST_MODE: 'true'
+      APP_URL: http://localhost:3000
+      NEXT_TELEMETRY_DISABLED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - name: Roller og database (samme som docker/init-db.sql)
+        run: PGPASSWORD=postgres psql -h localhost -U postgres -v ON_ERROR_STOP=1 -f docker/init-db.sql
+      - run: npm ci
+      - name: Migreringer på tom database
+        run: npm run db:migrate
+      - name: Merk databasen som testdatabase
+        run: DATABASE_URL=$DATABASE_MIGRATION_URL npm run db:mark-test
+      - name: Skott mellom bedriftene (RLS) direkte i databasen
+        run: npm run test:unit
+      - run: npm run build
+      - name: Start testinstansen
+        run: |
+          nohup npm run start > server.log 2>&1 &
+          for i in $(seq 1 60); do curl -sf http://localhost:3000/api/test/health && break; sleep 1; done
+      - name: Installer testsuiten
+        working-directory: testsuite
+        run: |
+          npm install
+          npx playwright install --with-deps chromium
+      - name: Kjør testsuiten
+        working-directory: testsuite
+        env:
+          FAKTURA_BASE_URL: http://localhost:3000
+        run: npx playwright test
+      - name: Last opp resultater
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: testresultater
+          path: |
+            testsuite/resultater/
+            testsuite/test-results/
+            server.log

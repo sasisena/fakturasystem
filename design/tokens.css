@@ -1,0 +1,78 @@
+/*
+ * Designtokens for Fakturasystem. Samme oppbygging som ATAK-systemet (Material Design 3-tokens),
+ * men med egne merkefarger: skoggrønn som hovedfarge og varm, lys bakgrunn.
+ * Alle farger, skrift, avstander og hjørner samles her. Kontrast er sjekket mot WCAG 2.2 AA.
+ */
+:root {
+  /* Merkefarger */
+  --color-primary: #1F4D3A;          /* Skoggrønn – knapper, lenker, aktive ikoner (10,3:1 mot hvit) */
+  --color-on-primary: #FFFFFF;
+  --color-primary-strong: #133326;   /* Mørk grønn – tekst på lysegrønne flater */
+  --color-primary-soft: #DCEEE3;     /* Lys grønn – valgt navigasjon, tonal-knapper */
+  --color-accent: #E0A526;           /* Rav – små markører, aldri store flater */
+  --color-on-accent: #1B1F1D;
+  --color-contrast: #1F4D3A;
+  --color-on-contrast: #FFFFFF;
+  --color-purple: #5A4A9C;
+  --color-purple-soft: #E7E2F6;
+
+  /* Navigasjon */
+  --color-nav: #1F4D3A;
+  --color-nav-strong: #133326;
+  --color-on-nav: #FFFFFF;
+  --color-on-nav-muted: #D2E6DA;
+
+  /* Nøytrale */
+  --color-bg: #F7F6F2;
+  --color-surface: #FFFFFF;
+  --color-surface-2: #F0EFEA;
+  --color-surface-3: #E6E4DD;
+  --color-ink: #1B1F1D;              /* 16:1 */
+  --color-muted: #555F5A;            /* 6,4:1 */
+  --color-border: #D6D3CA;
+  --color-border-strong: #7A837E;    /* kanter på felt, minst 3:1 (WCAG 1.4.11) */
+  --color-focus: #1F4D3A;
+
+  /* Semantiske (tonal chips: lys flate + mørk tekst) */
+  --color-success: #196B42;
+  --color-success-soft: #D5EEDF;
+  --color-warning: #6B4E00;
+  --color-warning-soft: #FFEFB8;
+  --color-danger: #A61D13;
+  --color-danger-soft: #FFDAD4;
+  --color-info: #1D4F73;
+  --color-info-soft: #D6E8F5;
+
+  --font-sans: "Atkinson Hyperlegible Next", Arial, Verdana, "Segoe UI", sans-serif;
+  --text-control: 0.9375rem;
+  --text-section: 1.25rem;
+  --text-card-title: 1.0625rem;
+  --text-page: 1.75rem;
+  --leading-body: 1.5;
+  --leading-tight: 1.3;
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-button: 20px;
+  --shadow-1: 0 1px 2px rgb(27 31 29 / 0.05), 0 1px 3px rgb(27 31 29 / 0.06);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --color-primary: #86CDA4; --color-on-primary: #0B2419; --color-primary-strong: #C9EBD6; --color-primary-soft: #1D3A2C;
+    --color-accent: #F2C45B; --color-on-accent: #121513;
+    --color-contrast: #86CDA4; --color-on-contrast: #0B2419;
+    --color-bg: #121513; --color-surface: #1B201D; --color-surface-2: #222824; --color-surface-3: #2B322D;
+    --color-ink: #E8ECE9; --color-muted: #A6B0AA; --color-border: #313934; --color-border-strong: #748079;
+    --color-focus: #86CDA4;
+    --color-success: #6FD6A0; --color-success-soft: #14352A;
+    --color-warning: #F2C45B; --color-warning-soft: #3A2D12;
+    --color-danger: #FF8A7D;  --color-danger-soft: #3D1C1A;
+    --color-info: #8CC8F2;    --color-info-soft: #16374F;
+    --color-purple: #B9AAF2; --color-purple-soft: #2A2442;
+    --color-nav: #0F2A1F; --color-nav-strong: #1D3A2C; --color-on-nav: #FFFFFF; --color-on-nav-muted: #C3D8CB;
+  }
+}

@@ -1,0 +1,13 @@
+# Lokalt utviklingsmiljø: Postgres 16 med egne roller for migrering og app (se docker/init-db.sql).
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports: ['5432:5432']
+    volumes:
+      - ./docker/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
+      - pgdata:/var/lib/postgresql/data
+volumes:
+  pgdata:
