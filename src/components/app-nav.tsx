@@ -1,12 +1,13 @@
 'use client';
 
-import { Building2, FileText, History, LayoutDashboard, LogOut, Repeat, Users, type LucideIcon } from 'lucide-react';
+import { Building2, Contact, FileText, History, LayoutDashboard, LogOut, Menu, Package, Plus, Repeat, Users, type LucideIcon } from 'lucide-react';
+import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Logo } from '@/components/logo';
 import { api } from '@/lib/api-client';
 import { cn } from '@/lib/cn';
 
-type Item = { href: string; label: string; icon: LucideIcon; soon?: boolean };
+type Item = { href: string; label: string; icon: LucideIcon };
 
 /**
  * Navigasjon: venstremeny på stor skjerm, bunnmeny på mobil (samme mønster som ATAK-systemet,
@@ -17,12 +18,26 @@ export function AppNav({ orgName, roleLabel, email, canSeeLog, manyOrgs }: { org
   const router = useRouter();
   const items: Item[] = [
     { href: '/app', label: 'Oversikt', icon: LayoutDashboard },
-    { href: '/app/fakturaer', label: 'Fakturaer', icon: FileText, soon: true },
+    { href: '/app/fakturaer', label: 'Fakturaer', icon: FileText },
+    { href: '/app/kunder', label: 'Kunder', icon: Contact },
+    { href: '/app/produkter', label: 'Produkter', icon: Package },
     { href: '/app/firma', label: 'Firma', icon: Building2 },
     { href: '/app/brukere', label: 'Brukere', icon: Users },
     ...(canSeeLog ? [{ href: '/app/logg', label: 'Logg', icon: History }] : []),
   ];
-  const active = (href: string) => (href === '/app' ? path === '/app' : path.startsWith(href));
+  // Bunnmenyen på mobil: de viktigste, pluss «Mer» for resten.
+  const mobile: Item[] = [
+    items[0],
+    items[1],
+    { href: '/app/fakturaer/ny', label: 'Ny faktura', icon: Plus },
+    items[2],
+    { href: '/app/mer', label: 'Mer', icon: Menu },
+  ];
+  const active = (href: string) =>
+    href === '/app' ? path === '/app'
+    : href === '/app/fakturaer' ? path.startsWith(href) && !path.startsWith('/app/fakturaer/ny')
+    : href === '/app/mer' ? ['/app/mer', '/app/produkter', '/app/firma', '/app/brukere', '/app/logg'].some((p) => path.startsWith(p))
+    : path.startsWith(href);
 
   async function logout() {
     await api('/api/auth/logout', { method: 'POST' });
@@ -46,18 +61,15 @@ export function AppNav({ orgName, roleLabel, email, canSeeLog, manyOrgs }: { org
         <ul className="flex flex-col gap-1">
           {items.map((i) => (
             <li key={i.href}>
-              {i.soon ? (
-                <span className="flex min-h-12 items-center gap-3 rounded-md px-3 text-on-nav-muted opacity-70">
-                  <i.icon className="size-5" aria-hidden="true" /> {i.label} <span className="ml-auto text-xs">Kommer</span>
-                </span>
-              ) : (
-                <a href={i.href} aria-current={active(i.href) ? 'page' : undefined} className={cn('flex min-h-12 items-center gap-3 rounded-md px-3 text-on-nav no-underline hover:bg-nav-strong', active(i.href) && 'bg-nav-strong font-semibold')}>
-                  <i.icon className="size-5" aria-hidden="true" /> {i.label}
-                </a>
-              )}
+              <a href={i.href} aria-current={active(i.href) ? 'page' : undefined} className={cn('flex min-h-12 items-center gap-3 rounded-md px-3 text-on-nav no-underline hover:bg-nav-strong', active(i.href) && 'bg-nav-strong font-semibold')}>
+                <i.icon className="size-5" aria-hidden="true" /> {i.label}
+              </a>
             </li>
           ))}
         </ul>
+        <Link href="/app/fakturaer/ny" className="mt-6 flex min-h-12 items-center justify-center gap-2 rounded-[var(--radius-button)] bg-accent font-semibold text-on-accent no-underline hover:brightness-105">
+          <Plus className="size-5" aria-hidden="true" /> Ny faktura
+        </Link>
         <div className="mt-auto border-t border-white/20 pt-4 text-sm">
           <p className="truncate text-on-nav-muted">{email}</p>
           <button type="button" onClick={logout} className="mt-2 inline-flex items-center gap-2 text-on-nav hover:underline">
@@ -77,11 +89,18 @@ export function AppNav({ orgName, roleLabel, email, canSeeLog, manyOrgs }: { org
         </div>
       </header>
       <nav aria-label="Hovedmeny" className="fixed inset-x-0 bottom-0 z-10 flex border-t border-border bg-surface pb-[env(safe-area-inset-bottom)] md:hidden">
-        {items.filter((i) => !i.soon && i.href !== '/app/logg').map((i) => (
-          <a key={i.href} href={i.href} aria-current={active(i.href) ? 'page' : undefined} className={cn('flex min-h-16 flex-1 flex-col items-center justify-center gap-1 text-xs text-muted no-underline', active(i.href) && 'font-semibold text-primary')}>
-            <i.icon className="size-6" aria-hidden="true" /> {i.label}
-          </a>
-        ))}
+        {mobile.map((i) =>
+          i.href === '/app/fakturaer/ny' ? (
+            <a key={i.href} href={i.href} className="flex min-h-16 flex-1 flex-col items-center justify-center gap-1 text-xs font-semibold text-primary no-underline">
+              <span className="grid size-10 place-items-center rounded-full bg-primary text-on-primary"><Plus className="size-6" aria-hidden="true" /></span>
+              <span className="sr-only">{i.label}</span>
+            </a>
+          ) : (
+            <a key={i.href} href={i.href} aria-current={active(i.href) ? 'page' : undefined} className={cn('flex min-h-16 flex-1 flex-col items-center justify-center gap-1 text-xs text-muted no-underline', active(i.href) && 'font-semibold text-primary')}>
+              <i.icon className="size-6" aria-hidden="true" /> {i.label}
+            </a>
+          ),
+        )}
       </nav>
     </>
   );

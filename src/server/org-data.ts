@@ -1,7 +1,7 @@
 /** Lesing av organisasjonsdata fra sidene (server components), med samme RLS-omfang som API-et. */
 import { eq } from 'drizzle-orm';
 import { memberships, organizations, users } from '@/db/schema';
-import { ROLE_LABELS } from './access';
+import { ROLE_LABELS, type Action } from './access';
 import { scopeFor } from './context';
 import { withScope, type Tx } from './db';
 import type { PageUser } from './page-auth';
@@ -54,4 +54,10 @@ export async function teamOf(tx: Tx, orgId: string): Promise<TeamMember[]> {
 export async function currentTeam(u: PageUser) {
   const orgId = u.access.require('team:se');
   return withScope(scopeFor(u.access), (tx) => teamOf(tx, orgId));
+}
+
+/** Kjører fn med bedriftens RLS-omfang etter at handlingen er sjekket. For sidene (server components). */
+export async function withOrg<T>(u: PageUser, action: Action, fn: (tx: Tx, orgId: string) => Promise<T>): Promise<T> {
+  const orgId = u.access.require(action);
+  return withScope(scopeFor(u.access), (tx) => fn(tx, orgId));
 }

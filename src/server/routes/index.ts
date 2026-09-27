@@ -3,3 +3,6 @@ import './test';
 import './auth';
 import './organizations';
 import './team';
+import './customers';
+import './products';
+import './invoices';

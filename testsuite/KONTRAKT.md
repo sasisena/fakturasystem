@@ -53,3 +53,46 @@ Roller per bedrift: `eier` (alt), `administrator` (alt unntatt å endre eiere), 
 | `PATCH /api/team/:userId {role}` | `200`. Bare eier kan gi eller ta fra eierrollen. `409 siste_eier` hvis bedriften ville stått uten eier. |
 | `DELETE /api/team/:userId` | `204`. Alle kan fjerne seg selv. `409 siste_eier`. |
 | `GET /api/audit-log` | Siste 200 hendelser i bedriften. Krever eier, administrator eller lesetilgang. |
+
+## 5. Kunder
+
+Krever rollen eier, administrator eller fakturering for å endre; lesetilgang kan bare se.
+
+| Kall | Svar |
+| --- | --- |
+| `GET /api/customers?q=` | `[{id, customerNumber, name, orgNumber, email, phone, address, postalCode, city}]`, sortert på navn. `q` søker i navn, org.nr. og kundenummer. |
+| `POST /api/customers` | `201`. Kundenummeret er fortløpende per bedrift (1, 2, 3 …). `422` ved manglende navn, ugyldig org.nr. (MOD11), e-post eller postnummer. |
+| `GET /api/customers/:id` | Kunden, eller `404` (også for kunder i en annen bedrift) |
+| `PUT /api/customers/:id` | Samme felt som ved opprettelse. Kundenummeret endres ikke. |
+| `DELETE /api/customers/:id` | `204`, eller `409 {code: "kunde_har_fakturaer"}` |
+
+## 6. Produkter
+
+Faste varer og tjenester som kan velges på fakturalinjer. Samme rolleregler som kunder.
+
+| Kall | Svar |
+| --- | --- |
+| `GET /api/products` | `[{id, name, unit, unitPrice, vatRate}]` – `unitPrice` i øre eks. mva |
+| `POST /api/products` | `201`. `vatRate` er 25, 15, 12 eller 0. `422` ved manglende navn, ugyldig pris eller sats. |
+| `PUT /api/products/:id`, `DELETE /api/products/:id` | `200` / `204`. Fakturalinjer beholder tekst og pris om produktet endres eller slettes. |
+
+## 7. Fakturaer (utkast)
+
+I denne fasen lages bare utkast. Fakturanummer, KID, utsending og kreditnota kommer i fase 3.
+
+| Kall | Svar |
+| --- | --- |
+| `POST /api/invoices` | `{customerId, theirReference?, note?, lines: [{description, quantity, unit?, unitPrice, vatRate, productId?}]}` → `201` med fakturaen (se under) |
+| `GET /api/invoices?customerId=` | `[{id, status, customerId, customerName, customerNumber, gross, createdAt, updatedAt}]`, nyeste først |
+| `GET /api/invoices/:id` | `{id, status: "utkast", customer: {…}, theirReference, note, lines: [{id, description, quantity, unit, unitPrice, vatRate, productId, net}], totals: {net, vat, gross, vatBreakdown: [{rate, base, vat}]}, vatRegistered, createdAt, updatedAt}` |
+| `PUT /api/invoices/:id` | Samme felt som ved opprettelse; linjene erstattes |
+| `DELETE /api/invoices/:id` | `204` |
+| `GET /api/invoices/:id/pdf` | `application/pdf` merket «UTKAST» |
+
+Regler:
+
+- Alle beløp er heltall i øre. `quantity` er større enn 0 med høyst tre desimaler. `unitPrice` kan være negativ (rabatt), men summen av fakturaen kan ikke være negativ.
+- Mva beregnes per sats på summert grunnlag og rundes til hele øre. `vatBreakdown` er sortert fra høyeste sats.
+- Er bedriften ikke registrert i Merverdiavgiftsregisteret, lagres alle linjer med sats 0 og fakturaen har ingen mva.
+- `customerId` eller `productId` som ikke finnes i bedriften, gir `422` med feltet `customerId` eller `lines.N.productId` (det avsløres ikke om den finnes i en annen bedrift).
+- Høyst 200 linjer. Minst én linje.

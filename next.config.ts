@@ -4,7 +4,7 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   reactStrictMode: true,
   output: 'standalone',
-  serverExternalPackages: ['pg', 'exceljs'],
+  serverExternalPackages: ['pg', 'pdfkit'],
   async headers() {
     return [
       {
