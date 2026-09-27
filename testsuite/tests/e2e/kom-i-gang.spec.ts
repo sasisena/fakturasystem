@@ -32,7 +32,10 @@ test('ny bruker registrerer bedrift, setter opp tofaktor og gir regnskapsfører 
   await expect(page.getByRole('heading', { name: 'Kom i gang' })).toBeVisible();
   await expect(page.getByText('Firmaopplysningene er komplette')).toBeVisible();
 
-  await page.getByRole('navigation', { name: 'Hovedmeny' }).getByRole('link', { name: 'Brukere' }).click();
+  // På mobil ligger «Brukere» under «Mer» i bunnmenyen (fra fase 2).
+  const menu = page.getByRole('navigation', { name: 'Hovedmeny' });
+  if (info.project.name === 'mobil') await menu.getByRole('link', { name: 'Mer' }).click();
+  await page.getByRole('link', { name: 'Brukere' }).first().click();
   await page.getByLabel('E-post').fill('regnskap@eksempel.example');
   await page.getByLabel('Rolle', { exact: true }).selectOption('lesetilgang');
   await page.getByRole('button', { name: 'Gi tilgang' }).click();

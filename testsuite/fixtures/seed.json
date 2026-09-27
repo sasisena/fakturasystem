@@ -11,7 +11,8 @@
       "postalCode": "0150",
       "city": "Oslo",
       "email": "post@fjellsno.example",
-      "accountNumber": "86011117947"
+      "accountNumber": "86011117947",
+      "nextCustomerNumber": 3
     },
     {
       "id": "0b000000-0000-4000-8000-000000000002",
@@ -19,17 +20,120 @@
       "vatRegistered": false,
       "address": "Bakergata 2",
       "postalCode": "9008",
-      "city": "Tromsø"
+      "city": "Tromsø",
+      "nextCustomerNumber": 2
     }
   ],
   "users": [
-    { "key": "eier-a", "id": "1a000000-0000-4000-8000-000000000001", "email": "kari@fjellsno.example", "name": "Kari Fjellsnø", "memberships": [{ "org": "0a000000-0000-4000-8000-000000000001", "role": "eier" }] },
-    { "key": "admin-a", "id": "1a000000-0000-4000-8000-000000000002", "email": "ola@fjellsno.example", "name": "Ola Admin", "memberships": [{ "org": "0a000000-0000-4000-8000-000000000001", "role": "administrator" }] },
-    { "key": "fakturering-a", "id": "1a000000-0000-4000-8000-000000000003", "email": "per@fjellsno.example", "name": "Per Faktura", "memberships": [{ "org": "0a000000-0000-4000-8000-000000000001", "role": "fakturering" }] },
-    { "key": "regnskap", "id": "1c000000-0000-4000-8000-000000000001", "email": "rita@regnskap.example", "name": "Rita Regnskap", "memberships": [
-      { "org": "0a000000-0000-4000-8000-000000000001", "role": "lesetilgang" },
-      { "org": "0b000000-0000-4000-8000-000000000002", "role": "lesetilgang" }
-    ] },
-    { "key": "eier-b", "id": "1b000000-0000-4000-8000-000000000001", "email": "nina@nordlys.example", "name": "Nina Nordlys", "memberships": [{ "org": "0b000000-0000-4000-8000-000000000002", "role": "eier" }] }
+    {
+      "key": "eier-a",
+      "id": "1a000000-0000-4000-8000-000000000001",
+      "email": "kari@fjellsno.example",
+      "name": "Kari Fjellsnø",
+      "memberships": [
+        {
+          "org": "0a000000-0000-4000-8000-000000000001",
+          "role": "eier"
+        }
+      ]
+    },
+    {
+      "key": "admin-a",
+      "id": "1a000000-0000-4000-8000-000000000002",
+      "email": "ola@fjellsno.example",
+      "name": "Ola Admin",
+      "memberships": [
+        {
+          "org": "0a000000-0000-4000-8000-000000000001",
+          "role": "administrator"
+        }
+      ]
+    },
+    {
+      "key": "fakturering-a",
+      "id": "1a000000-0000-4000-8000-000000000003",
+      "email": "per@fjellsno.example",
+      "name": "Per Faktura",
+      "memberships": [
+        {
+          "org": "0a000000-0000-4000-8000-000000000001",
+          "role": "fakturering"
+        }
+      ]
+    },
+    {
+      "key": "regnskap",
+      "id": "1c000000-0000-4000-8000-000000000001",
+      "email": "rita@regnskap.example",
+      "name": "Rita Regnskap",
+      "memberships": [
+        {
+          "org": "0a000000-0000-4000-8000-000000000001",
+          "role": "lesetilgang"
+        },
+        {
+          "org": "0b000000-0000-4000-8000-000000000002",
+          "role": "lesetilgang"
+        }
+      ]
+    },
+    {
+      "key": "eier-b",
+      "id": "1b000000-0000-4000-8000-000000000001",
+      "email": "nina@nordlys.example",
+      "name": "Nina Nordlys",
+      "memberships": [
+        {
+          "org": "0b000000-0000-4000-8000-000000000002",
+          "role": "eier"
+        }
+      ]
+    }
+  ],
+  "customers": [
+    {
+      "id": "2a000000-0000-4000-8000-000000000001",
+      "orgId": "0a000000-0000-4000-8000-000000000001",
+      "customerNumber": 1,
+      "name": "Havbris Kafé AS",
+      "orgNumber": "",
+      "email": "post@havbris.example",
+      "address": "Kaigata 3",
+      "postalCode": "5003",
+      "city": "Bergen"
+    },
+    {
+      "id": "2a000000-0000-4000-8000-000000000002",
+      "orgId": "0a000000-0000-4000-8000-000000000001",
+      "customerNumber": 2,
+      "name": "Ola Privat",
+      "email": "ola@privat.example"
+    },
+    {
+      "id": "2b000000-0000-4000-8000-000000000001",
+      "orgId": "0b000000-0000-4000-8000-000000000002",
+      "customerNumber": 1,
+      "name": "Polarkaffe",
+      "email": "hei@polarkaffe.example",
+      "city": "Tromsø"
+    }
+  ],
+  "products": [
+    {
+      "id": "3a000000-0000-4000-8000-000000000001",
+      "orgId": "0a000000-0000-4000-8000-000000000001",
+      "name": "Designtime",
+      "unit": "timer",
+      "unitPrice": 110000,
+      "vatRate": 25
+    },
+    {
+      "id": "3b000000-0000-4000-8000-000000000001",
+      "orgId": "0b000000-0000-4000-8000-000000000002",
+      "name": "Rundstykker",
+      "unit": "stk",
+      "unitPrice": 1500,
+      "vatRate": 15
+    }
   ]
 }

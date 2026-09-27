@@ -9,3 +9,6 @@ export function user(key: string) {
   if (!u) throw new Error(`Ukjent bruker i fixturen: ${key}`);
   return u;
 }
+
+export const customer = (i: number) => seed.customers[i];
+export const product = (i: number) => seed.products[i];

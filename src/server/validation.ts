@@ -3,7 +3,7 @@
  */
 import { z } from 'zod';
 import { ROLES } from '@/db/schema';
-import { isValidAccountNumber, isValidOrgNumber } from '@/lib/faktura';
+import { isValidAccountNumber, isValidOrgNumber, isVatRate, type VatRate } from '@/lib/faktura';
 import { invalid, type FieldError } from './errors';
 
 export const EMAIL_RE = /^[^\s@<>()[\]\\,;:"]+@[^\s@<>()[\]\\,;:"]+\.[a-z]{2,}$/i;
@@ -48,6 +48,55 @@ export const inviteSchema = z.object({
   email: z.string({ error: MSG.email }).trim().toLowerCase().refine(isEmail, { error: MSG.email }),
   role: z.enum(ROLES, { error: MSG.role }),
 });
+
+const postalCode = z.preprocess((v) => (v == null ? '' : String(v).trim()), z.string().regex(/^(\d{4})?$/, { error: MSG.postalCode }));
+const optionalOrgNumber = z.preprocess((v) => digits(v ?? ''), z.string().refine((v) => v === '' || isValidOrgNumber(v), { error: MSG.orgNumber }));
+const optionalEmail = z.preprocess((v) => (v == null ? '' : String(v).trim().toLowerCase()), z.string().refine((v) => v === '' || isEmail(v), { error: MSG.email }));
+
+export const customerSchema = z.object({
+  name: z.string({ error: 'Skriv navnet på kunden.' }).trim().min(1, { error: 'Skriv navnet på kunden.' }).max(200, { error: 'Navnet er for langt (høyst 200 tegn).' }),
+  orgNumber: optionalOrgNumber,
+  email: optionalEmail,
+  phone: optionalText(30),
+  address: optionalText(),
+  postalCode,
+  city: optionalText(100),
+});
+
+const VAT_MSG = 'Velg mva-sats: 25, 15, 12 eller 0 %.';
+const vatRate = z.number({ error: VAT_MSG }).refine((r): r is VatRate => isVatRate(r), { error: VAT_MSG });
+const unit = z.preprocess((v) => (v == null || v === '' ? 'stk' : v), text(20));
+const MAX_ORE = 1_000_000_000_00; // 1 milliard kroner
+
+export const productSchema = z.object({
+  name: z.string({ error: 'Skriv navnet på produktet.' }).trim().min(1, { error: 'Skriv navnet på produktet.' }).max(200, { error: 'Høyst 200 tegn.' }),
+  unit,
+  unitPrice: z.number({ error: 'Prisen må være et beløp.' }).int({ error: 'Prisen må oppgis i hele øre.' }).min(0, { error: 'Prisen kan ikke være negativ.' }).max(MAX_ORE, { error: 'Prisen er for høy.' }),
+  vatRate,
+});
+
+const quantity = z
+  .number({ error: 'Skriv antall.' })
+  .gt(0, { error: 'Antall må være større enn 0.' })
+  .max(1_000_000, { error: 'Antallet er for stort.' })
+  .refine((q) => Math.abs(Math.round(q * 1000) - q * 1000) < 1e-6, { error: 'Antall kan ha høyst tre desimaler.' });
+
+export const invoiceLineSchema = z.object({
+  productId: z.preprocess((v) => (v === '' ? null : v), z.uuid({ error: 'Ukjent produkt.' }).nullish()),
+  description: z.string({ error: 'Skriv hva linjen gjelder.' }).trim().min(1, { error: 'Skriv hva linjen gjelder.' }).max(500, { error: 'Høyst 500 tegn.' }),
+  quantity,
+  unit,
+  unitPrice: z.number({ error: 'Prisen må være et beløp.' }).int({ error: 'Prisen må oppgis i hele øre.' }).min(-MAX_ORE).max(MAX_ORE, { error: 'Prisen er for høy.' }),
+  vatRate,
+});
+
+export const invoiceSchema = z.object({
+  customerId: z.uuid({ error: 'Velg en kunde.' }),
+  theirReference: optionalText(100),
+  note: optionalText(2000),
+  lines: z.array(invoiceLineSchema, { error: 'Legg til minst én linje.' }).min(1, { error: 'Legg til minst én linje.' }).max(200, { error: 'Høyst 200 linjer.' }),
+});
+export type InvoiceInput = z.infer<typeof invoiceSchema>;
 
 export const roleSchema = z.object({ role: z.enum(ROLES, { error: MSG.role }) });
 

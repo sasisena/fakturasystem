@@ -15,6 +15,20 @@
       "when": 1790534934479,
       "tag": "0001_rls",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790538477866,
+      "tag": "0002_kunder_produkter_fakturaer",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1790538478488,
+      "tag": "0003_rls_fakturering",
+      "breakpoints": true
     }
   ]
 }

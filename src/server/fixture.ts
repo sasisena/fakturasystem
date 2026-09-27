@@ -3,15 +3,20 @@
  * Alle data i fixturene er oppdiktet.
  */
 import { sql } from 'drizzle-orm';
-import { memberships, organizations, ROLES, users, type Role } from '@/db/schema';
+import { customers, memberships, organizations, products, ROLES, users, type Role } from '@/db/schema';
 import type { Tx } from './db';
 import { badRequest } from './errors';
 
 type FixtureOrg = Partial<typeof organizations.$inferInsert> & { id: string; name: string };
 type FixtureUser = { id: string; email: string; name?: string; totpEnabled?: boolean; memberships?: { org: string; role: Role }[] };
-export type Fixture = { organizations?: FixtureOrg[]; users?: FixtureUser[] };
+export type Fixture = {
+  organizations?: FixtureOrg[];
+  users?: FixtureUser[];
+  customers?: (typeof customers.$inferInsert)[];
+  products?: (typeof products.$inferInsert)[];
+};
 
-const TABLES = ['audit_log', 'outbox', 'sessions', 'otp_codes', 'login_attempts', 'memberships', 'users', 'organizations'];
+const TABLES = ['invoice_lines', 'invoices', 'products', 'customers', 'audit_log', 'outbox', 'sessions', 'otp_codes', 'login_attempts', 'memberships', 'users', 'organizations'];
 
 export async function loadFixture(tx: Tx, fixture: unknown): Promise<void> {
   const f = fixture as Fixture;
@@ -24,4 +29,6 @@ export async function loadFixture(tx: Tx, fixture: unknown): Promise<void> {
       await tx.insert(memberships).values({ orgId: m.org, userId: u.id, role: m.role });
     }
   }
+  if (f.customers?.length) await tx.insert(customers).values(f.customers);
+  if (f.products?.length) await tx.insert(products).values(f.products);
 }

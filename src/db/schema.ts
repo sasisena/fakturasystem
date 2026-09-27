@@ -6,7 +6,7 @@
  * - Brukere er felles: én person kan være med i flere organisasjoner (f.eks. en regnskapsfører).
  * - Primærnøklene er tekniske UUID-er.
  */
-import { bigserial, boolean, index, integer, jsonb, pgTable, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
+import { bigint, bigserial, boolean, index, integer, jsonb, numeric, pgTable, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
 
 const ts = (name: string) => timestamp(name, { withTimezone: true, mode: 'date' });
 
@@ -28,6 +28,8 @@ export const organizations = pgTable('organizations', {
   phone: text('phone').notNull().default(''),
   accountNumber: text('account_number').notNull().default(''),
   paymentTermsDays: integer('payment_terms_days').notNull().default(14),
+  /** Neste kundenummer i bedriften. Tildeles i samme transaksjon som kunden opprettes. */
+  nextCustomerNumber: integer('next_customer_number').notNull().default(1),
   createdAt: ts('created_at').notNull().defaultNow(),
 });
 
@@ -45,6 +47,90 @@ export const memberships = pgTable(
     createdAt: ts('created_at').notNull().defaultNow(),
   },
   (t) => [uniqueIndex('memberships_org_user').on(t.orgId, t.userId), index('memberships_user').on(t.userId)],
+);
+
+// ---------------------------------------------------------------------------
+// Kunder, produkter og fakturaer (alle med org_id og RLS)
+// Beløp lagres som heltall i øre for å unngå avrundingsfeil.
+// ---------------------------------------------------------------------------
+
+/** Øre som JavaScript-tall (trygt opp til 90 billioner kroner). */
+const ore = (name: string) => bigint(name, { mode: 'number' });
+
+export const customers = pgTable(
+  'customers',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    orgId: uuid('org_id').notNull().references(() => organizations.id, { onDelete: 'cascade' }),
+    /** Fortløpende kundenummer per bedrift (brukes også i KID). */
+    customerNumber: integer('customer_number').notNull(),
+    name: text('name').notNull(),
+    orgNumber: text('org_number').notNull().default(''),
+    email: text('email').notNull().default(''),
+    phone: text('phone').notNull().default(''),
+    address: text('address').notNull().default(''),
+    postalCode: text('postal_code').notNull().default(''),
+    city: text('city').notNull().default(''),
+    createdAt: ts('created_at').notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex('customers_org_number').on(t.orgId, t.customerNumber), index('customers_org_name').on(t.orgId, t.name)],
+);
+
+export const products = pgTable(
+  'products',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    orgId: uuid('org_id').notNull().references(() => organizations.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    unit: text('unit').notNull().default('stk'),
+    /** Pris eks. mva i øre. */
+    unitPrice: ore('unit_price').notNull(),
+    vatRate: integer('vat_rate').notNull().default(25),
+    createdAt: ts('created_at').notNull().defaultNow(),
+  },
+  (t) => [index('products_org_name').on(t.orgId, t.name)],
+);
+
+export const INVOICE_STATUSES = ['utkast'] as const;
+export type InvoiceStatus = (typeof INVOICE_STATUSES)[number];
+
+export const invoices = pgTable(
+  'invoices',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    orgId: uuid('org_id').notNull().references(() => organizations.id, { onDelete: 'cascade' }),
+    customerId: uuid('customer_id').notNull().references(() => customers.id),
+    /** Fase 2 har bare utkast. Nummer, KID, utsending og kreditnota kommer i fase 3. */
+    status: text('status').$type<InvoiceStatus>().notNull().default('utkast'),
+    theirReference: text('their_reference').notNull().default(''),
+    note: text('note').notNull().default(''),
+    /** Summer lagres for lister og rapporter; regnes alltid ut på nytt fra linjene ved endring. */
+    net: ore('net').notNull().default(0),
+    vat: ore('vat').notNull().default(0),
+    gross: ore('gross').notNull().default(0),
+    createdBy: uuid('created_by'),
+    createdAt: ts('created_at').notNull().defaultNow(),
+    updatedAt: ts('updated_at').notNull().defaultNow(),
+  },
+  (t) => [index('invoices_org_created').on(t.orgId, t.createdAt), index('invoices_customer').on(t.customerId)],
+);
+
+export const invoiceLines = pgTable(
+  'invoice_lines',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    orgId: uuid('org_id').notNull().references(() => organizations.id, { onDelete: 'cascade' }),
+    invoiceId: uuid('invoice_id').notNull().references(() => invoices.id, { onDelete: 'cascade' }),
+    position: integer('position').notNull(),
+    /** Produktet linjen ble laget fra, hvis noe. Teksten og prisen er kopiert, så linjen står seg om produktet endres. */
+    productId: uuid('product_id').references(() => products.id, { onDelete: 'set null' }),
+    description: text('description').notNull(),
+    quantity: numeric('quantity', { precision: 12, scale: 3, mode: 'number' }).notNull(),
+    unit: text('unit').notNull().default('stk'),
+    unitPrice: ore('unit_price').notNull(),
+    vatRate: integer('vat_rate').notNull(),
+  },
+  (t) => [index('invoice_lines_invoice').on(t.invoiceId, t.position)],
 );
 
 // ---------------------------------------------------------------------------
