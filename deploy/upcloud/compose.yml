@@ -1,6 +1,6 @@
 # Testmiljøet på én server (UpCloud): database, app, utsendingsjobb og Caddy (HTTPS).
 # Settes opp av installer.sh og oppdateres av oppdater.sh. Verdiene kommer fra /etc/faktura/test.env.
-# Kjører UTEN testmodus: ekte innlogging med kode på e-post (via Gmail) og ekte utsending av fakturaer.
+# Kjører UTEN testmodus: ekte innlogging med kode på e-post og ekte utsending av fakturaer (via SMTP, f.eks. Mailtrap).
 name: faktura-test
 
 x-app-env: &app-env
