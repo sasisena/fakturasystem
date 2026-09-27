@@ -14,19 +14,27 @@ export type Message = {
   body: string;
   /** Organisasjonen meldingen hører til. Tom for innloggingskoder. */
   orgId?: string | null;
+  /** Svar går hit (bedriftens e-post), ikke til systemets avsenderadresse. */
+  replyTo?: string | null;
+  /** Fakturaen som legges ved som PDF når meldingen sendes. */
+  invoiceId?: string | null;
   /** Satt når meldingen ikke kan sendes (f.eks. ugyldig adresse). Utsendingsjobben hopper over den. */
   error?: string | null;
 };
 
+export type Attachment = { filename: string; content: Buffer; contentType: string };
+
 export interface MessageChannel {
   readonly name: 'email';
-  deliver(m: Message): Promise<void>;
+  deliver(m: Message, attachments?: Attachment[]): Promise<void>;
 }
 
 /** Legger meldingen i utboksen. */
 export async function enqueue(db: Q, m: Message) {
   await db.insert(outbox).values({
     orgId: m.orgId ?? null,
+    replyTo: m.replyTo ?? null,
+    invoiceId: m.invoiceId ?? null,
     channel: m.channel,
     to: m.to,
     subject: m.subject ?? null,

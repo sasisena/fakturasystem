@@ -29,6 +29,13 @@
       "when": 1790538478488,
       "tag": "0003_rls_fakturering",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1790544663918,
+      "tag": "0004_fakturanummer_og_utsending",
+      "breakpoints": true
     }
   ]
 }

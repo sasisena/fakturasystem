@@ -4,7 +4,8 @@
 export const VAT_RATES = [25, 15, 12, 0] as const;
 export type VatRate = (typeof VAT_RATES)[number];
 
-export type InvoiceStatus = 'draft' | 'sent' | 'paid' | 'credited';
+/** Samme verdier som i databasen (src/db/schema.ts). */
+export type InvoiceStatus = 'utkast' | 'sendt' | 'betalt' | 'kreditert';
 
 export interface InvoiceLineInput {
   description: string;
@@ -83,10 +84,10 @@ export function validateLines(lines: unknown): string[] {
 
 /** Lovlige statusoverganger. Sendte fakturaer rettes aldri, de krediteres (bokføringsloven). */
 const TRANSITIONS: Record<InvoiceStatus, InvoiceStatus[]> = {
-  draft: ['sent'],
-  sent: ['paid', 'credited'],
-  paid: ['sent', 'credited'],
-  credited: [],
+  utkast: ['sendt'],
+  sendt: ['betalt', 'kreditert'],
+  betalt: ['sendt', 'kreditert'],
+  kreditert: [],
 };
 
 export function canTransition(from: InvoiceStatus, to: InvoiceStatus): boolean {
@@ -101,5 +102,5 @@ export function addDays(isoDate: string, days: number): string {
 }
 
 export function isOverdue(status: InvoiceStatus, dueDate: string, today: string): boolean {
-  return status === 'sent' && dueDate < today;
+  return status === 'sendt' && dueDate < today;
 }

@@ -58,7 +58,7 @@ route({
   pattern: '/api/test/outbox',
   handler: async (c) => {
     const rows = await c.tx.select().from(outbox).orderBy(asc(outbox.seq));
-    return json(rows.map((r) => ({ channel: r.channel, to: r.to, subject: r.subject, body: r.body, orgId: r.orgId })));
+    return json(rows.map((r) => ({ channel: r.channel, to: r.to, replyTo: r.replyTo, subject: r.subject, body: r.body, orgId: r.orgId, invoiceId: r.invoiceId, hasAttachment: !!r.invoiceId })));
   },
 });
 

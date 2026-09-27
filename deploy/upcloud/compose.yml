@@ -1,0 +1,70 @@
+# Testmiljøet på én server (UpCloud): database, app, utsendingsjobb og Caddy (HTTPS).
+# Settes opp av installer.sh og oppdateres av oppdater.sh. Verdiene kommer fra /etc/faktura/test.env.
+# Kjører UTEN testmodus: ekte innlogging med kode på e-post (via Gmail) og ekte utsending av fakturaer.
+name: faktura-test
+
+x-app-env: &app-env
+  DATABASE_URL: postgres://faktura_app:${APP_DB_PASSWORD}@db:5432/faktura
+  DATABASE_MIGRATION_URL: postgres://faktura_owner:${OWNER_DB_PASSWORD}@db:5432/faktura
+  APP_SECRET: ${APP_SECRET:?}
+  APP_URL: https://${DOMENE:?}
+  SMTP_URL: ${SMTP_URL:?}
+  EMAIL_FROM: ${EMAIL_FROM:?}
+  FAKTURA_TEST_MODE: 'false'
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?}
+      OWNER_DB_PASSWORD: ${OWNER_DB_PASSWORD:?}
+      APP_DB_PASSWORD: ${APP_DB_PASSWORD:?}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./init-db.sh:/docker-entrypoint-initdb.d/init-db.sh:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
+      interval: 3s
+      retries: 20
+
+  app:
+    build:
+      context: ../..
+      args:
+        GIT_SHA: ${GIT_SHA:-ukjent}
+    image: faktura-test-app
+    restart: unless-stopped
+    environment:
+      <<: *app-env
+      RUN_MIGRATIONS: 'true'
+    # Bare tilgjengelig på serveren selv. Utenfra går all trafikk gjennom Caddy.
+    ports: ['127.0.0.1:3000:3000']
+    depends_on:
+      db: { condition: service_healthy }
+
+  # Sender e-post fra utboksen (innloggingskoder og fakturaer) og rydder, hvert 15. sekund.
+  jobber:
+    image: faktura-test-app
+    restart: unless-stopped
+    environment: *app-env
+    command: ['sh', '-c', 'while true; do npx tsx scripts/run-jobs.ts; sleep 15; done']
+    depends_on:
+      app: { condition: service_started }
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    # Henter HTTPS-sertifikat fra Let's Encrypt automatisk.
+    command: ['caddy', 'reverse-proxy', '--from', '${DOMENE}', '--to', 'app:3000']
+    ports: ['80:80', '443:443', '443:443/udp']
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on: [app]
+
+volumes:
+  pgdata:
+  caddy_data:
+  caddy_config:
