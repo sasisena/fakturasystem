@@ -1,6 +1,7 @@
 # Testmiljøet på én server (UpCloud): database, app, utsendingsjobb og Caddy (HTTPS).
 # Settes opp av installer.sh og oppdateres av oppdater.sh. Verdiene kommer fra /etc/faktura/test.env.
-# Kjører UTEN testmodus: ekte innlogging med kode på e-post og ekte utsending av fakturaer (via SMTP, f.eks. Mailtrap).
+# Kjører uten testmodus (ekte oppslag i Brønnøysund, ingen /api/test). Innloggingskoder og fakturaer vises på
+# testsiden /test/koder (passord TESTSIDE_PASSORD), og sendes i tillegg som e-post hvis SMTP_URL er satt.
 name: faktura-test
 
 x-app-env: &app-env
@@ -8,8 +9,9 @@ x-app-env: &app-env
   DATABASE_MIGRATION_URL: postgres://faktura_owner:${OWNER_DB_PASSWORD}@db:5432/faktura
   APP_SECRET: ${APP_SECRET:?}
   APP_URL: https://${DOMENE:?}
-  SMTP_URL: ${SMTP_URL:?}
-  EMAIL_FROM: ${EMAIL_FROM:?}
+  SMTP_URL: ${SMTP_URL:-}
+  EMAIL_FROM: ${EMAIL_FROM:-Fakturasystem <ikke-svar@example.no>}
+  TEST_PAGE_PASSWORD: ${TESTSIDE_PASSORD:-}
   FAKTURA_TEST_MODE: 'false'
 
 services:

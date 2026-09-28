@@ -1,32 +1,43 @@
 #!/bin/bash
 # Setter opp testmiljøet på en ny Ubuntu-server (24.04). Kjøres som root, én gang.
-# Forventer at repoet allerede er klonet til /opt/faktura, og miljøvariablene for e-post:
-#   SMTP_VERT, SMTP_PORT, SMTP_BRUKER, SMTP_PASSORD og AVSENDER (f.eks. fra Mailtrap).
+# Forventer at repoet allerede er klonet til /opt/faktura, og miljøvariabelen TESTSIDE_PASSORD.
+# E-post er valgfritt: sett SMTP_VERT, SMTP_PORT, SMTP_BRUKER, SMTP_PASSORD og AVSENDER for å sende
+# ekte e-post (f.eks. via Mailtrap). Uten dem vises innloggingskoder og fakturaer bare på testsiden.
 # DOMENE er valgfri. Uten den brukes <ip-med-bindestreker>.sslip.io.
 # Se docs/TESTMILJO-UPCLOUD.md.
 set -euo pipefail
 exec > >(tee -a /var/log/faktura-installer.log) 2>&1
 echo "== Fakturasystem testmiljø: installasjon startet $(date -u +%FT%TZ)"
 
-for v in SMTP_VERT SMTP_PORT SMTP_BRUKER SMTP_PASSORD AVSENDER; do
-  if [ -z "${!v:-}" ]; then
-    echo "$v mangler. Se docs/TESTMILJO-UPCLOUD.md." >&2
+if [ "${#TESTSIDE_PASSORD}" -lt 12 ] || [[ "$TESTSIDE_PASSORD" =~ [^A-Za-z0-9._-] ]]; then
+  echo "TESTSIDE_PASSORD må være minst 12 tegn og bare ha bokstaver a–z, tall, punktum, bindestrek og understrek." >&2
+  exit 1
+fi
+
+SMTP_URL=""
+EMAIL_FROM=""
+if [ -n "${SMTP_VERT:-}" ]; then
+  for v in SMTP_PORT SMTP_BRUKER SMTP_PASSORD AVSENDER; do
+    if [ -z "${!v:-}" ]; then
+      echo "$v mangler. Når SMTP_VERT er satt, må alle e-postverdiene fylles ut. Se docs/TESTMILJO-UPCLOUD.md." >&2
+      exit 1
+    fi
+  done
+  if [[ ! "$SMTP_PORT" =~ ^[0-9]+$ ]]; then
+    echo "SMTP_PORT må være et tall, for eksempel 2525, 587 eller 465." >&2
     exit 1
   fi
-done
-if [[ ! "$SMTP_PORT" =~ ^[0-9]+$ ]]; then
-  echo "SMTP_PORT må være et tall, for eksempel 2525, 587 eller 465." >&2
-  exit 1
+  if [[ ! "$AVSENDER" =~ ^[^@[:space:]]+@[^@[:space:]]+\.[a-z]{2,}$ ]]; then
+    echo "AVSENDER må være en e-postadresse, for eksempel faktura@eksempel.no." >&2
+    exit 1
+  fi
+  # Port 465 bruker kryptert tilkobling fra start (smtps); de andre krypterer underveis (STARTTLS).
+  if [ "$SMTP_PORT" = "465" ]; then protokoll=smtps; else protokoll=smtp; fi
+  # Brukernavn og passord kan inneholde tegn som må kodes i en adresse.
+  kod() { python3 -c 'import sys, urllib.parse; print(urllib.parse.quote(sys.argv[1], safe=""))' "$1"; }
+  SMTP_URL="${protokoll}://$(kod "$SMTP_BRUKER"):$(kod "$SMTP_PASSORD")@${SMTP_VERT}:${SMTP_PORT}"
+  EMAIL_FROM="Fakturasystem <${AVSENDER}>"
 fi
-if [[ ! "$AVSENDER" =~ ^[^@[:space:]]+@[^@[:space:]]+\.[a-z]{2,}$ ]]; then
-  echo "AVSENDER må være en e-postadresse, for eksempel faktura@eksempel.no." >&2
-  exit 1
-fi
-# Port 465 bruker kryptert tilkobling fra start (smtps); de andre krypterer underveis (STARTTLS).
-if [ "$SMTP_PORT" = "465" ]; then protokoll=smtps; else protokoll=smtp; fi
-# Brukernavn og passord kan inneholde tegn som må kodes i en adresse.
-kod() { python3 -c 'import sys, urllib.parse; print(urllib.parse.quote(sys.argv[1], safe=""))' "$1"; }
-SMTP_URL="${protokoll}://$(kod "$SMTP_BRUKER"):$(kod "$SMTP_PASSORD")@${SMTP_VERT}:${SMTP_PORT}"
 
 export DEBIAN_FRONTEND=noninteractive
 apt-get update -q
@@ -63,8 +74,9 @@ APP_SECRET=$(openssl rand -hex 32)
 POSTGRES_PASSWORD=$(openssl rand -hex 24)
 OWNER_DB_PASSWORD=$(openssl rand -hex 24)
 APP_DB_PASSWORD=$(openssl rand -hex 24)
+TESTSIDE_PASSORD=$TESTSIDE_PASSORD
 SMTP_URL=$SMTP_URL
-EMAIL_FROM="Fakturasystem <${AVSENDER}>"
+EMAIL_FROM="$EMAIL_FROM"
 ENV
 fi
 chmod 700 /opt/faktura
@@ -101,4 +113,4 @@ UNIT
 systemctl daemon-reload
 systemctl enable --now faktura-oppdater.timer
 
-echo "== Ferdig. Testmiljøet: https://$DOMENE"
+echo "== Ferdig. Testmiljøet: https://$DOMENE  Testside: https://$DOMENE/test/koder"

@@ -17,6 +17,8 @@ Alle `/api/test/*`-endepunkter finnes **bare** når `FAKTURA_TEST_MODE=true`. El
 
 I testmodus svarer oppslag i Enhetsregisteret med faste, oppdiktede data (org.nr. `923609016`).
 
+**Testsiden** `GET /test/koder` finnes bare når `TEST_PAGE_PASSWORD` er satt (uavhengig av testmodus), og krever det passordet med HTTP Basic (brukernavn kan være hva som helst): ellers `404`, eller `401` uten riktig passord. Den viser innloggingskoder og e-post fra utboksen (siste døgn), gjeldende tofaktor-kode for hver bruker, og `GET /test/koder?pdf=<nr>` gir PDF-en til en faktura-e-post. Testene for den kjøres når `FAKTURA_TESTSIDE_PASSORD` er satt.
+
 ## 2. Innlogging og sikkerhet
 
 - `POST /api/auth/otp/request {email}` → alltid `202`, også for ukjent e-post. Koden sendes på e-post.
