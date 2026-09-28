@@ -55,6 +55,7 @@ jobs:
       DATABASE_URL: postgres://faktura_app:faktura_app@localhost:5432/faktura_test
       APP_SECRET: ci-hemmelighet-som-bare-brukes-i-ci-0123456789abcdef
       FAKTURA_TEST_MODE: 'true'
+      TEST_PAGE_PASSWORD: ci-testside-passord-123
       APP_URL: http://localhost:3000
       NEXT_TELEMETRY_DISABLED: '1'
     steps:
@@ -84,6 +85,7 @@ jobs:
         working-directory: testsuite
         env:
           FAKTURA_BASE_URL: http://localhost:3000
+          FAKTURA_TESTSIDE_PASSORD: ci-testside-passord-123
         run: npx playwright test
       - name: Last opp resultater
         if: always()

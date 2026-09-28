@@ -9,7 +9,11 @@ Testmiljøet kjører på én server hos UpCloud, som er et finsk selskap med dat
 
 Serveren sjekker `main` hvert 5. minutt og bygger på nytt når noe er flettet inn.
 
-Testmiljøet kjører **uten testmodus**: innloggingskoder og fakturaer sendes som e-post via SMTP. Vi bruker **Mailtrap Sandbox**. Den fanger opp all e-post i en innboks på mailtrap.io, slik at ingenting når fram til ekte mottakere. Der leser du innloggingskodene og ser fakturaene med PDF, uansett hvilken e-postadresse de er sendt til.
+Du logger inn med en engangskode, som i ATAK-systemet. Koden leser du av på en **passordbeskyttet testside**, `https://<adressen>/test/koder`. Testsiden viser også tofaktor-koden til hver bruker, så du trenger ikke en app. Fakturaer som «sendes», vises der med lenke til PDF-en.
+
+E-post er valgfritt. Legger du inn SMTP-opplysninger (for eksempel fra Mailtrap Sandbox), sendes e-posten i tillegg. Testsiden viser da om utsendingen feilet, og hvorfor.
+
+Testmiljøet kjører ellers som den ekte løsningen: oppslag i Brønnøysundregistrene er ekte, og testsuitens endepunkter (`/api/test/*`) finnes ikke.
 
 Oppsettet ligger i `deploy/upcloud/`:
 
@@ -22,20 +26,7 @@ Oppsettet ligger i `deploy/upcloud/`:
 
 ## Sett det opp (én gang, ca. 30 minutter)
 
-### 1. Hent SMTP-opplysningene fra Mailtrap Sandbox
-
-1. Logg inn på https://mailtrap.io og gå til **Email Testing → Inboxes** (Sandbox).
-2. Åpne innboksen, for eksempel «My Inbox».
-3. Under **Integration** velger du **SMTP**. Der står:
-   - **Host:** `sandbox.smtp.mailtrap.io`
-   - **Port:** bruk `2525`
-   - **Username** og **Password**: to lange rader med bokstaver og tall. Trykk på kopieringsknappen ved siden av hvert felt.
-
-Gratisversjonen tar imot et begrenset antall e-poster per måned. Det holder godt til test.
-
-**Senere**, når ekte kunder skal få e-post, bytter vi til Mailtrap **Email Sending**, eller en annen tjeneste. Det krever at bedriften har et eget domene. Da endres bare SMTP-opplysningene.
-
-### 2. Lag en lesenøkkel i GitHub
+### 1. Lag en lesenøkkel i GitHub
 
 Repoet er privat, så serveren trenger en nøkkel for å hente koden. Nøkkelen kan bare lese dette ene repoet.
 
@@ -45,7 +36,7 @@ Repoet er privat, så serveren trenger en nøkkel for å hente koden. Nøkkelen 
 4. **Permissions → Repository permissions → Contents:** *Read-only*. Ikke gi andre rettigheter.
 5. Trykk **Generate token** og kopier nøkkelen. Den begynner med `github_pat_`. Nøkkelen vises bare én gang.
 
-### 3. Opprett serveren i UpCloud
+### 2. Opprett serveren i UpCloud
 
 I UpCloud-panelet velger du **Servers → Deploy server**:
 
@@ -53,26 +44,34 @@ I UpCloud-panelet velger du **Servers → Deploy server**:
 - **Plan:** minst **2 GB minne**.
 - **Operating system:** **Ubuntu Server 24.04 LTS**.
 - **SSH keys:** du kan bruke den samme offentlige nøkkelen som for ATAK-serveren.
-- **Initialization script:** lim inn skriptet under. Bytt ut verdiene i anførselstegn først (GitHub-nøkkelen, og brukernavn og passord fra Mailtrap):
+- **Initialization script:** lim inn skriptet under. Bytt ut de to verdiene øverst først:
 
 ```bash
 #!/bin/bash
-GITHUB_TOKEN='lim-inn-nøkkelen-fra-steg-2'
+GITHUB_TOKEN='lim-inn-nøkkelen-fra-steg-1'
+export TESTSIDE_PASSORD='velg-et-langt-passord'
+apt-get update -q && apt-get install -y -q git
+git clone "https://faktura:${GITHUB_TOKEN}@github.com/sasisena/fakturasystem.git" /opt/faktura
+bash /opt/faktura/deploy/upcloud/installer.sh
+```
+
+Passordet til testsiden må ha minst 12 tegn. Bruk bare bokstavene a–z, tall, punktum, bindestrek og understrek, for eksempel `faktura-test-2026-blaa-fjell`.
+
+**Vil du også ha e-post** (valgfritt), legger du til disse linjene før `apt-get`-linjen. Verdiene finner du i Mailtrap under **Email Testing → Inboxes →** innboksen **→ Integration → SMTP**:
+
+```bash
 export SMTP_VERT='sandbox.smtp.mailtrap.io'
 export SMTP_PORT='2525'
 export SMTP_BRUKER='username-fra-mailtrap'
 export SMTP_PASSORD='password-fra-mailtrap'
 export AVSENDER='faktura@eksempel.no'
-apt-get update -q && apt-get install -y -q git
-git clone "https://faktura:${GITHUB_TOKEN}@github.com/sasisena/fakturasystem.git" /opt/faktura
-bash /opt/faktura/deploy/upcloud/installer.sh
 ```
 
 Trykk **Deploy**.
 
 Skriptet med nøklene blir liggende i UpCloud-panelet for serveren. Det er greit for et testmiljø, men ikke del skjermbilder av det.
 
-### 4. Vent 15–20 minutter og åpne testmiljøet
+### 3. Vent 15–20 minutter og åpne testmiljøet
 
 Første bygg tar tid. Adressen lages ut fra serverens offentlige IPv4-adresse, som står i serveroversikten i UpCloud. Punktumene byttes med bindestreker:
 
@@ -80,19 +79,21 @@ Første bygg tar tid. Adressen lages ut fra serverens offentlige IPv4-adresse, s
 
 ## Slik prøver du det
 
-1. Åpne adressen og trykk **Kom i gang gratis**.
-2. Skriv en e-postadresse, for eksempel din egen. Koden havner i Mailtrap-innboksen innen et halvt minutt (ikke i din vanlige innboks). Åpne mailtrap.io og les koden der.
-3. Registrer bedriften med organisasjonsnummeret. Navn og adresse hentes fra Brønnøysundregistrene.
-4. Sett opp tofaktor med en app på telefonen, for eksempel Google Authenticator eller Microsoft Authenticator.
-5. Lag en kunde, lag en faktura og send den på e-post. Den dukker opp i Mailtrap-innboksen med PDF-en som vedlegg.
+1. Åpne testsiden `https://<adressen>/test/koder` i én fane. Brukernavnet kan være hva som helst; passordet er det du valgte.
+2. Åpne `https://<adressen>` i en annen fane og trykk **Kom i gang gratis**.
+3. Skriv en e-postadresse og trykk **Send kode**. Les av koden på testsiden (den oppdaterer seg hvert 15. sekund).
+4. Registrer bedriften med organisasjonsnummeret. Navn og adresse hentes fra Brønnøysundregistrene.
+5. Tofaktor: skann QR-koden med en app, eller les av koden i brukerlisten på testsiden.
+6. Lag en kunde og en faktura, og send den på e-post. Den dukker opp under «Fakturaer og andre e-poster» på testsiden, med lenke til PDF-en.
 
-Bruk bare oppdiktede kunder eller deg selv. Testmiljøet har ikke sikkerhetskopier og er ikke satt opp for ekte kundedata.
+Bruk bare deg selv og oppdiktede kunder. Testmiljøet har ikke sikkerhetskopier og er ikke satt opp for ekte kundedata.
 
 ## Godt å vite
 
 - **Kostnad:** serveren koster det samme per måned uansett trafikk.
 - **Oppdatering:** innen 5 minutter etter at noe er flettet inn i `main` begynner serveren å bygge. Bygget tar 5–10 minutter. Dataene blir liggende.
 - **Hvem som helst som finner adressen, kan registrere seg.** Det er derfor ikke lurt å dele adressen offentlig ennå.
+- **Den som kjenner passordet til testsiden, kan logge inn som hvilken som helst bruker.** Del det bare med dem som skal teste. Testsiden skal aldri slås på i produksjon.
 - **GitHub-nøkkelen utløper** på datoen du valgte. Deretter slutter serveren å oppdatere seg, men den fortsetter å kjøre.
 - **sslip.io** er en gratis navnetjeneste som gjør IP-adressen om til et navn, slik at vi kan få HTTPS-sertifikat uten eget domene.
 
@@ -106,7 +107,8 @@ Logg inn med `ssh root@<IP>`.
 | Se siste oppdateringer | `journalctl -u faktura-oppdater -n 50` |
 | Bygg på nytt nå | `bash /opt/faktura/deploy/upcloud/oppdater.sh --tving` |
 | Se loggen til appen | `docker logs faktura-test-app-1 --tail 100` |
-| Se om e-post blir sendt | `docker logs faktura-test-jobber-1 --tail 20` |
+| Se om e-post blir sendt | `docker logs faktura-test-jobber-1 --tail 20` (feilmeldinger vises også på testsiden) |
+| Slå på testsiden på en server som ble satt opp før den fantes | `echo 'TESTSIDE_PASSORD=velg-et-langt-passord' >> /etc/faktura/test.env && bash /opt/faktura/deploy/upcloud/oppdater.sh --tving` |
 | Ny GitHub-nøkkel | `git -C /opt/faktura remote set-url origin https://faktura:<ny-nøkkel>@github.com/sasisena/fakturasystem.git` |
 
 Hemmelighetene (passord og nøkler) ligger i `/etc/faktura/test.env`, som bare root kan lese.
