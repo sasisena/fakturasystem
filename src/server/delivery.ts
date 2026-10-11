@@ -9,12 +9,13 @@ import { config } from './env';
 import { invoiceById } from './invoicing';
 import type { Attachment, Message, MessageChannel } from './messaging';
 import { invoiceFilename, renderInvoicePdf } from './pdf';
+import { BRAND } from '@/lib/brand';
 
 const email: MessageChannel = {
   name: 'email',
   async deliver(m: Message, attachments: Attachment[] = []) {
     const transport = nodemailer.createTransport(config.smtpUrl);
-    await transport.sendMail({ from: config.emailFrom, to: m.to, replyTo: m.replyTo ?? undefined, subject: m.subject ?? 'Fakturasystem', text: m.body, attachments });
+    await transport.sendMail({ from: config.emailFrom, to: m.to, replyTo: m.replyTo ?? undefined, subject: m.subject ?? BRAND.full, text: m.body, attachments });
   },
 };
 

@@ -6,6 +6,7 @@ import { Alert } from '@/components/ui/card';
 import { Field, Input, describedBy } from '@/components/ui/field';
 import { api, errorText, type ApiErrorBody } from '@/lib/api-client';
 import { isValidOrgNumber } from '@/lib/faktura';
+import { useHydrated } from '@/lib/use-hydrated';
 
 export type OrgValues = {
   name: string;
@@ -42,6 +43,7 @@ export function OrgForm({ initial, submitLabel, onSubmit, readOnly = false }: {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [message, setMessage] = useState<{ tone: 'success' | 'danger'; text: string } | null>(null);
   const [busy, setBusy] = useState(false);
+  const ready = useHydrated();
   const [found, setFound] = useState<string | null>(null);
 
   const set = (k: keyof OrgValues) => (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -118,7 +120,7 @@ export function OrgForm({ initial, submitLabel, onSubmit, readOnly = false }: {
       </div>
       {input('paymentTermsDays', 'Betalingsfrist (dager)', { inputMode: 'numeric', className: 'max-w-32' })}
       {message && <Alert tone={message.tone} role={message.tone === 'danger' ? 'alert' : 'status'}>{message.text}</Alert>}
-      {!readOnly && <Button type="submit" disabled={busy}>{busy ? 'Lagrer …' : submitLabel}</Button>}
+      {!readOnly && <Button type="submit" disabled={busy || !ready}>{busy ? 'Lagrer …' : submitLabel}</Button>}
     </form>
   );
 }

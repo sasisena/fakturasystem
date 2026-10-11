@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Alert } from '@/components/ui/card';
 import { Field, Input } from '@/components/ui/field';
 import { api, errorText } from '@/lib/api-client';
+import { useHydrated } from '@/lib/use-hydrated';
 
 export function MfaForm({ next, configured }: { next: string; configured: boolean }) {
   const router = useRouter();
@@ -14,6 +15,7 @@ export function MfaForm({ next, configured }: { next: string; configured: boolea
   const [code, setCode] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  const ready = useHydrated();
 
   useEffect(() => {
     if (configured) return;
@@ -56,7 +58,7 @@ export function MfaForm({ next, configured }: { next: string; configured: boolea
         <Field id="mfa-code" label="Kode fra appen">
           <Input id="mfa-code" inputMode="numeric" autoComplete="one-time-code" maxLength={6} value={code} onChange={(e) => setCode(e.target.value)} />
         </Field>
-        <Button type="submit" disabled={busy}>{busy ? 'Sjekker …' : 'Bekreft'}</Button>
+        <Button type="submit" disabled={busy || !ready}>{busy ? 'Sjekker …' : 'Bekreft'}</Button>
       </form>
     </div>
   );

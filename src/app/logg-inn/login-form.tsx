@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Alert } from '@/components/ui/card';
 import { Field, Input } from '@/components/ui/field';
 import { api, errorText } from '@/lib/api-client';
+import { useHydrated } from '@/lib/use-hydrated';
 
 export function LoginForm({ next }: { next: string }) {
   const router = useRouter();
@@ -14,6 +15,7 @@ export function LoginForm({ next }: { next: string }) {
   const [sent, setSent] = useState(false);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  const ready = useHydrated();
 
   async function send(e: React.FormEvent) {
     e.preventDefault();
@@ -46,7 +48,7 @@ export function LoginForm({ next }: { next: string }) {
           <Field id="login-email" label="E-post">
             <Input id="login-email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
           </Field>
-          <Button type="submit" disabled={busy}>{busy ? 'Sender …' : 'Send kode'}</Button>
+          <Button type="submit" disabled={busy || !ready}>{busy ? 'Sender …' : 'Send kode'}</Button>
         </form>
       ) : (
         <form onSubmit={verify} className="flex flex-col gap-4" noValidate>

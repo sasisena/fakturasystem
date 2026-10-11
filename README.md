@@ -1,6 +1,6 @@
-# Fakturasystem
+# Lyng Faktura
 
-Fakturasystem for små bedrifter og frilansere – web og mobil. «Fakturasystem» er et arbeidsnavn inntil produktet har fått navn.
+Fakturasystem for små bedrifter og frilansere – web og mobil. Produktet heter **Lyng** (navnet ligger samlet i `src/lib/brand.ts`). Repoet heter fortsatt `fakturasystem`.
 
 ## Status
 
@@ -8,9 +8,11 @@ Fakturasystem for små bedrifter og frilansere – web og mobil. «Fakturasystem
 
 **Leveranse 2 – kunder, produkter og fakturautkast (ferdig):** kundekartotek med fortløpende kundenummer, produkter, fakturautkast med flere mva-satser og PDF.
 
-**Leveranse 3 – utsending (denne):** fakturanummer uten hull, KID, utsending på e-post med PDF, merk som betalt, forfalte fakturaer, kreditnota, og sperre i databasen mot å endre sendte fakturaer.
+**Leveranse 3 – utsending (ferdig):** fakturanummer uten hull, KID, utsending på e-post med PDF, merk som betalt, forfalte fakturaer, kreditnota, og sperre i databasen mot å endre sendte fakturaer.
 
-**Neste leveranser:** innbetalinger fra bank → purring → EHF, integrasjoner og betaling for abonnement. Se `docs/strategi.md` og `docs/overlevering.md`.
+**Nytt utseende (denne):** lyngfarger, ny logo, lys meny med topplinje, ny innloggingsside og fakturaliste som tabell på stor skjerm. Bare utseende – ingen nye funksjoner.
+
+**Neste leveranser:** kontrollpanel for systemeier → innbetalinger fra bank → purring → EHF, integrasjoner og betaling for abonnement. Se `docs/strategi.md` og `docs/overlevering.md`.
 
 ## Teknologi
 

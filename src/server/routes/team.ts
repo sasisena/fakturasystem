@@ -13,6 +13,7 @@ import { teamOf } from '../org-data';
 import { json, route, type Ctx } from '../router';
 import { isUuid } from '../util';
 import { inviteSchema, parse, roleSchema } from '../validation';
+import { BRAND } from '@/lib/brand';
 
 async function memberOf(c: Ctx, orgId: string, userId: string) {
   if (!isUuid(userId)) throw notFound();
@@ -52,8 +53,8 @@ route({
       channel: 'email',
       orgId,
       to: email,
-      subject: `Du har fått tilgang til ${org.name} i Fakturasystem`,
-      body: `Hei!\n\n${c.session!.user.email} har gitt deg tilgang til ${org.name} i Fakturasystem med rollen ${ROLE_LABELS[role].toLowerCase()}.\n\nLogg inn med denne e-postadressen på ${url}/logg-inn. Første gang setter du opp tofaktor med en autentiseringsapp på telefonen.`,
+      subject: `Du har fått tilgang til ${org.name} i ${BRAND.full}`,
+      body: `Hei!\n\n${c.session!.user.email} har gitt deg tilgang til ${org.name} i ${BRAND.full} med rollen ${ROLE_LABELS[role].toLowerCase()}.\n\nLogg inn med denne e-postadressen på ${url}/logg-inn. Første gang setter du opp tofaktor med en autentiseringsapp på telefonen.`,
     });
     await audit(c.tx, { orgId, actorId: c.userId, action: 'medlem_invitert', entity: 'user', entityId: user.id, after: { role } });
     return json({ userId: user.id, email, role }, 201);

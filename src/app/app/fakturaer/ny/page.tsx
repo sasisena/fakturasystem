@@ -14,7 +14,7 @@ export default async function NewInvoicePage({ searchParams }: { searchParams: P
   const data = await withOrg(u, 'faktura:endre', editorData);
   const preset = data.customers.some((c) => c.id === kunde) ? kunde : undefined;
   return (
-    <div className="flex flex-col gap-6">
+    <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
       <h1>Ny faktura</h1>
       <InvoiceEditor {...data} presetCustomerId={preset} />
     </div>

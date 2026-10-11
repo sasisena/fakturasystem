@@ -19,7 +19,7 @@ export default async function CustomerPage({ params }: { params: Promise<{ id: s
   }));
   const canEdit = u.access.can('faktura:endre');
   return (
-    <div className="flex flex-col gap-6">
+    <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="text-sm text-muted">Kunde nr. {customer.customerNumber}</p>

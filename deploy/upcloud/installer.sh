@@ -36,7 +36,7 @@ if [ -n "${SMTP_VERT:-}" ]; then
   # Brukernavn og passord kan inneholde tegn som må kodes i en adresse.
   kod() { python3 -c 'import sys, urllib.parse; print(urllib.parse.quote(sys.argv[1], safe=""))' "$1"; }
   SMTP_URL="${protokoll}://$(kod "$SMTP_BRUKER"):$(kod "$SMTP_PASSORD")@${SMTP_VERT}:${SMTP_PORT}"
-  EMAIL_FROM="Fakturasystem <${AVSENDER}>"
+  EMAIL_FROM="Lyng Faktura <${AVSENDER}>"
 fi
 
 export DEBIAN_FRONTEND=noninteractive

@@ -19,6 +19,7 @@ import { enqueue } from '../messaging';
 import { json, route, type Ctx } from '../router';
 import { clearSessionCookies, createSession, deleteSession, setSessionCookies } from '../session';
 import { newTotpSecret, otpauthUri, verifyTotp } from '../totp';
+import { BRAND } from '@/lib/brand';
 
 const WINDOW_MS = 15 * 60 * 1000;
 const MAX_FAILED = 10;
@@ -40,7 +41,7 @@ const tooMany = () =>
   new ApiError(429, { code: 'for_mange_forsok', message: 'For mange forsøk. Vent 15 minutter og prøv igjen.' });
 
 const codeMessage = {
-  subject: 'Innloggingskode til Fakturasystem',
+  subject: `Innloggingskode til ${BRAND.full}`,
   body: (code: string) => `Koden din er ${code}. Den gjelder i 10 minutter.\n\nHar du ikke bedt om koden, kan du se bort fra denne e-posten.`,
 };
 
