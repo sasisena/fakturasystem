@@ -91,7 +91,7 @@ Bruk bare deg selv og oppdiktede kunder. Testmiljøet har ikke sikkerhetskopier 
 ## Godt å vite
 
 - **Kostnad:** serveren koster det samme per måned uansett trafikk.
-- **Oppdatering:** innen 5 minutter etter at noe er flettet inn i `main` begynner serveren å bygge. Bygget tar 5–10 minutter. Dataene blir liggende.
+- **Oppdatering:** innen 5 minutter etter at noe er flettet inn i `main` begynner serveren å bygge. Bygget tar 5–10 minutter. Dataene blir liggende. Feiler et bygg, prøver serveren igjen hvert 5. minutt til det lykkes. Siste versjon som ble bygget ferdig, står i `/var/lib/faktura/bygget`.
 - **Hvem som helst som finner adressen, kan registrere seg.** Det er derfor ikke lurt å dele adressen offentlig ennå.
 - **Den som kjenner passordet til testsiden, kan logge inn som hvilken som helst bruker.** Del det bare med dem som skal teste. Testsiden skal aldri slås på i produksjon.
 - **GitHub-nøkkelen utløper** på datoen du valgte. Deretter slutter serveren å oppdatere seg, men den fortsetter å kjøre.
