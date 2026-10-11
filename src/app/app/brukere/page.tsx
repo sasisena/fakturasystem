@@ -9,7 +9,7 @@ export const metadata: Metadata = { title: 'Brukere' };
 export default async function UsersPage() {
   const u = await requireOrg('/app/brukere');
   return (
-    <div className="flex flex-col gap-6">
+    <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
       <h1>Brukere</h1>
       <p className="text-muted">Gi regnskapsfører eller kolleger tilgang til bedriften. De logger inn med sin egen e-postadresse.</p>
       <Team

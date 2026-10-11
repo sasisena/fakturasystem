@@ -13,7 +13,7 @@ export default async function EditInvoicePage({ params }: { params: Promise<{ id
   if (!u.access.can('faktura:endre')) redirect(`/app/fakturaer/${id}`);
   const { data, invoice } = await withOrg(u, 'faktura:endre', async (tx, orgId) => ({ data: await editorData(tx, orgId), invoice: await invoiceById(tx, orgId, id) }));
   return (
-    <div className="flex flex-col gap-6">
+    <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
       <h1>Endre utkast</h1>
       <InvoiceEditor {...data} invoice={invoice} />
     </div>

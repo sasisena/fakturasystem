@@ -1,11 +1,11 @@
 import type { Metadata, Viewport } from 'next';
 import type { ReactNode } from 'react';
-import '@fontsource/atkinson-hyperlegible-next/400.css';
-import '@fontsource/atkinson-hyperlegible-next/600.css';
+import '@fontsource-variable/inter';
 import './globals.css';
+import { BRAND } from '@/lib/brand';
 
 export const metadata: Metadata = {
-  title: { default: 'Fakturasystem', template: '%s – Fakturasystem' },
+  title: { default: BRAND.full, template: `%s – ${BRAND.name}` },
   description: 'Lag, send og få betalt fakturaer – på mobil og web.',
   robots: { index: false, follow: false },
 };
@@ -15,8 +15,8 @@ export const viewport: Viewport = {
   initialScale: 1,
   viewportFit: 'cover',
   themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#F7F6F2' },
-    { media: '(prefers-color-scheme: dark)', color: '#121513' },
+    { media: '(prefers-color-scheme: light)', color: '#F8F7F6' },
+    { media: '(prefers-color-scheme: dark)', color: '#151216' },
   ],
 };
 

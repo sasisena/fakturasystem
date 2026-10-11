@@ -3,7 +3,7 @@ import type { InputHTMLAttributes, ReactNode, SelectHTMLAttributes, TextareaHTML
 import { cn } from '@/lib/cn';
 
 export const inputClass =
-  'min-h-12 w-full rounded-sm border border-border-strong bg-surface px-3 text-base text-ink placeholder:text-muted focus-visible:border-primary aria-[invalid=true]:border-danger';
+  'min-h-11 w-full rounded-sm border border-border-strong bg-surface px-3 text-base text-ink placeholder:text-muted focus-visible:border-primary aria-[invalid=true]:border-danger';
 
 export function Label({ className, ...props }: LabelPrimitive.LabelProps) {
   return <LabelPrimitive.Root className={cn('text-sm font-semibold', className)} {...props} />;

@@ -1,5 +1,6 @@
 /** TOTP (RFC 6238) med SHA-1, 6 siffer og 30 sekunders steg – virker med vanlige autentiseringsapper. */
 import { createHmac, randomBytes } from 'node:crypto';
+import { BRAND } from '@/lib/brand';
 
 const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
 
@@ -56,5 +57,5 @@ export function verifyTotp(secret: string, code: string, at: Date): boolean {
 }
 
 export function otpauthUri(secret: string, email: string): string {
-  return `otpauth://totp/Fakturasystem:${encodeURIComponent(email)}?secret=${secret}&issuer=Fakturasystem&algorithm=SHA1&digits=6&period=30`;
+  return `otpauth://totp/${encodeURIComponent(BRAND.full)}:${encodeURIComponent(email)}?secret=${secret}&issuer=${encodeURIComponent(BRAND.full)}&algorithm=SHA1&digits=6&period=30`;
 }

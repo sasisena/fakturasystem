@@ -7,7 +7,7 @@ export const config = {
   appUrl: process.env.APP_URL ?? '',
   testMode: process.env.FAKTURA_TEST_MODE === 'true',
   production: process.env.NODE_ENV === 'production',
-  emailFrom: process.env.EMAIL_FROM ?? 'Fakturasystem <ikke-svar@example.no>',
+  emailFrom: process.env.EMAIL_FROM ?? 'Lyng Faktura <ikke-svar@example.no>',
   smtpUrl: process.env.SMTP_URL ?? '',
   /**
    * Passord til testsiden /test/koder (bare i testmiljøet). Tom verdi = siden finnes ikke.

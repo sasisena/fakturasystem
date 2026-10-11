@@ -13,7 +13,7 @@ export default async function MorePage() {
     ...(u.access.can('logg:se') ? [{ href: '/app/logg', label: 'Logg', hint: 'Alle endringer', icon: History }] : []),
   ];
   return (
-    <div className="flex flex-col gap-6">
+    <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
       <h1>Mer</h1>
       <ul className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-surface">
         {links.map((l) => (

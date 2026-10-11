@@ -31,7 +31,7 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
   const title = isDraft ? `Faktura til ${inv.customer.name}` : `${isCredit ? 'Kreditnota' : 'Faktura'} ${inv.number}`;
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
       <div>
         <InvoiceStatus {...inv} />
         <h1 className="mt-2">{title}</h1>

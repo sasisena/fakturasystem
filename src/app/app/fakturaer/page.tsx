@@ -25,13 +25,13 @@ export default async function InvoicesPage({ searchParams }: { searchParams: Pro
           <Link href="/app/fakturaer/ny" className={buttonVariants()}><Plus className="size-5" aria-hidden="true" /> Ny faktura</Link>
         )}
       </div>
-      <nav aria-label="Filter" className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1">
+      <nav aria-label="Filter" className="-mx-4 flex gap-1 overflow-x-auto border-b border-border px-4 md:mx-0 md:px-0">
         {FILTERS.map(([value, label]) => (
           <Link
             key={value}
             href={value ? `/app/fakturaer?status=${value}` : '/app/fakturaer'}
             aria-current={status === value ? 'page' : undefined}
-            className={cn('rounded-full border px-4 py-2 text-sm font-semibold whitespace-nowrap no-underline', status === value ? 'border-primary bg-primary text-on-primary' : 'border-border bg-surface text-ink')}
+            className={cn('-mb-px border-b-2 px-3 py-2.5 text-sm font-semibold whitespace-nowrap no-underline', status === value ? 'border-primary text-primary' : 'border-transparent text-muted hover:text-ink')}
           >
             {label}
           </Link>

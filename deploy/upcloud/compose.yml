@@ -10,7 +10,7 @@ x-app-env: &app-env
   APP_SECRET: ${APP_SECRET:?}
   APP_URL: https://${DOMENE:?}
   SMTP_URL: ${SMTP_URL:-}
-  EMAIL_FROM: ${EMAIL_FROM:-Fakturasystem <ikke-svar@example.no>}
+  EMAIL_FROM: ${EMAIL_FROM:-Lyng Faktura <ikke-svar@example.no>}
   TEST_PAGE_PASSWORD: ${TESTSIDE_PASSORD:-}
   FAKTURA_TEST_MODE: 'false'
 

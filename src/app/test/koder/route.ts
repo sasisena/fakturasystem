@@ -38,7 +38,7 @@ function guard(req: Request): Response | null {
   if (!authorized(req)) {
     return new Response('Skriv passordet for testsiden (brukernavn kan være hva som helst).', {
       status: 401,
-      headers: { 'WWW-Authenticate': 'Basic realm="Fakturasystem testside", charset="UTF-8"', 'Content-Type': 'text/plain; charset=utf-8' },
+      headers: { 'WWW-Authenticate': 'Basic realm="Lyng Faktura testside", charset="UTF-8"', 'Content-Type': 'text/plain; charset=utf-8' },
     });
   }
   return null;
@@ -98,13 +98,13 @@ export async function GET(req: Request) {
     .join('');
 
   const html = `<!doctype html><html lang="nb"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta http-equiv="refresh" content="15"><title>Testside – Fakturasystem</title>
+<meta http-equiv="refresh" content="15"><title>Testside – Lyng Faktura</title>
 <style>
 body{font-family:system-ui,sans-serif;max-width:60rem;margin:2rem auto;padding:0 1rem;color:#1B1F1D;background:#F7F6F2;line-height:1.5}
 h1{margin-bottom:.25rem}.varsel{background:#FFEFB8;border-left:4px solid #6B4E00;padding:.75rem 1rem}
 table{border-collapse:collapse;width:100%;background:#fff;margin:.5rem 0 1.5rem}th,td{border-bottom:1px solid #D6D3CA;padding:.4rem .6rem;text-align:left;vertical-align:top}
 th{background:#F0EFEA}.kode{font:700 1.4rem ui-monospace,monospace;letter-spacing:.12em}.feil{color:#A61D13;font-weight:600}
-a{color:#1F4D3A}
+a{color:#9A4894}
 </style></head><body>
 <h1>Testside</h1>
 <p class="varsel"><strong>Bare for testmiljøet.</strong> Bruk bare oppdiktede data. Siden oppdateres av seg selv hvert 15. sekund.</p>
